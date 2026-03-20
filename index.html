@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Sistem Razia • SMKN 1 Malteng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: "Inter", system-ui, sans-serif;
+            
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* ===== MODAL ===== */
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            opacity: 0;
+            visibility: hidden;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .modal-active { opacity: 1 !important; visibility: visible !important; }
+        .modal-content {
+            transform: scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-active .modal-content { transform: scale(1); }
+
+        /* ===== NOTIFICATION PANEL ===== */
+        .notification-panel {
+            position: fixed;
+            top: 4rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            width: 90%;
+            max-width: 380px;
+            max-height: 70vh;
+            border-radius: 2rem;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.7);
+        }
+        .notification-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (min-width: 640px) {
+            .notification-panel { left: auto; right: 1rem; transform: translateY(-10px); width: 360px; }
+            .notification-panel.active { transform: translateY(0); }
+        }
+
+        /* ===== SHIMMER ===== */
+        .shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ===== CUSTOM SELECT ===== */
+        .custom-select-wrapper { position: relative; user-select: none; }
+        .custom-select-trigger {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 0.875rem 1.25rem;
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .custom-select-trigger:hover { border-color: #3b82f6; }
+        .custom-select-options {
+            position: absolute;
+            top: 110%;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 200;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .custom-select-wrapper.open .custom-select-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .custom-option {
+            padding: 0.75rem 1.25rem;
+            margin: 0.25rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.75rem;
+            color: #cbd5e1;
+        }
+        .custom-option:hover { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .custom-option.selected { background: #2563eb; color: white !important; }
+
+        *, *::before, *::after {
+            transition-property: background-color, border-color, color, box-shadow;
+            transition-duration: 0.2s;
+            transition-timing-function: ease;
+        }
+        /* But NOT transform/opacity to avoid breaking animations */
+        button, a { transition-property: background-color, border-color, color, box-shadow, transform, opacity; }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-100 antialiased pb-28 md:pb-8 selection:bg-blue-500/30">
+
+    <!-- Error Boundary -->
+    <div id="global-error" class="fixed inset-0 z-[999] bg-black/50 dark:bg-slate-950/90 hidden items-center justify-center p-6 text-center backdrop-blur">
+        <div class="max-w-sm bg-red-900/50 p-8 rounded-3xl border border-red-700/50 shadow-2xl">
+            <span class="text-5xl mb-4 block">😵</span>
+            <h2 class="text-xl font-bold text-red-300 mb-2">Terjadi Kesalahan</h2>
+            <p class="text-red-200/70 text-sm mb-6" id="error-message">Aplikasi mengalami masalah tak terduga.</p>
+            <button onclick="window.location.reload()" class="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500 transition w-full">Muat Ulang</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-[60] bg-[#020617]/80 backdrop-blur-xl border-b border-slate-800/80 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5" id="brand-logo">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <span class="text-white font-black text-sm">SMK</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm leading-tight text-slate-900 dark:text-white">SMKN 1 MALTENG</h1>
+                    <p class="text-[9px] font-medium text-slate-500 dark:text-slate-400 tracking-wide">RAZIA • ENTERPRISE V6</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button data-action="toggle-admin" class="p-2.5 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-600/30 transition active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
+                    </svg>
+                </button>
+                <div class="relative">
+                    <button data-action="toggle-notifications" id="notif-btn" class="p-2.5 bg-slate-800/70 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                        </svg>
+                    </button>
+                    <span id="notif-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-[#020617] hidden">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 space-y-6 mt-5">
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-3 gap-3" id="stats-container">
+            <div class="shimmer h-20 rounded-2xl"></div>
+            <div class="shimmer h-20 rounded-2xl"></div>
+            <div class="shimmer h-20 rounded-2xl"></div>
+        </div>
+
+        <!-- Registration Form -->
+        <section class="bg-slate-900/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-md backdrop-blur-sm">
+            <h2 class="text-base font-semibold flex items-center gap-2 mb-5 text-slate-700 dark:text-slate-200">
+                <span class="w-7 h-7 bg-blue-100 dark:bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 text-sm">✚</span>
+                REGISTRASI PELANGGARAN
+            </h2>
+            <form id="mainForm" class="space-y-4" novalidate>
+                <div>
+                    <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Nama Lengkap <span class="text-red-400">*</span></label>
+                    <input type="text" name="nama" required class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" placeholder="Nama lengkap siswa...">
+                    <p class="text-[9px] text-red-400 mt-1 hidden" data-error="nama"></p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Kelas *</label>
+                        <select name="kelas" required class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500">
+                            <option value="" disabled selected>Pilih</option>
+                        </select>
+                        <p class="text-[9px] text-red-400 mt-1 hidden" data-error="kelas"></p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Jurusan *</label>
+                        <select name="jurusan" required class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500">
+                            <option value="" disabled selected>Pilih</option>
+                        </select>
+                        <p class="text-[9px] text-red-400 mt-1 hidden" data-error="jurusan"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1 block">HP Siswa</label>
+                        <input type="tel" name="telpSiswa" class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 outline-none" placeholder="08xx...">
+                        <p class="text-[9px] text-red-400 mt-1 hidden" data-error="telpSiswa"></p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1 block">HP Ortu (WA)</label>
+                        <input type="tel" name="telpOrtu" class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 outline-none" placeholder="08xx...">
+                        <p class="text-[9px] text-red-400 mt-1 hidden" data-error="telpOrtu"></p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Kronologi *</label>
+                    <textarea name="alasan" required rows="2" class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 outline-none" placeholder="Jelaskan kronologi pelanggaran..."></textarea>
+                    <p class="text-[9px] text-red-400 mt-1 hidden" data-error="alasan"></p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 active:scale-[0.98]">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Simpan Data
+                </button>
+            </form>
+        </section>
+
+        <!-- Filter Section -->
+        <div class="space-y-3">
+            <div class="relative">
+                <select id="mobile-filter-kelas" class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 appearance-none">
+                    <option value="all">📚 Semua Kelas</option>
+                </select>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+            </div>
+            <div class="relative">
+                <select id="mobile-filter-jurusan" class="w-full bg-slate-800/50 border border-slate-700/70 p-3.5 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 appearance-none">
+                    <option value="all">🎓 Semua Jurusan</option>
+                </select>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+            </div>
+            <div class="relative group">
+                <input type="text" id="searchBar" placeholder="Cari nama, kelas, atau jurusan..." class="w-full bg-slate-900/80 border border-slate-700/80 pl-11 pr-12 py-3.5 rounded-2xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                </span>
+                <button id="clearSearch" class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-600 dark:hover:text-white flex items-center justify-center opacity-0 pointer-events-none transition">✕</button>
+                <div id="loading-indicator" class="absolute right-14 top-1/2 -translate-y-1/2 hidden">
+                    <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Cards -->
+        <div id="studentContainer" class="grid grid-cols-1 gap-4 pb-6 min-h-[200px]"></div>
+        <div id="sentinel" class="h-10 w-full flex justify-center items-center text-slate-400 dark:text-slate-500 text-xs opacity-70">
+            <span>Memuat lebih banyak...</span>
+        </div>
+    </main>
+
+    <!-- Notification Panel -->
+    <div id="notif-panel" class="notification-panel">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">Peringatan (3x+)</h3>
+            <span id="notif-count-text" class="text-[9px] font-medium text-red-500 dark:text-red-400 py-1 px-2 bg-red-50 dark:bg-red-500/10 rounded-full">0 Siswa</span>
+        </div>
+        <div id="notif-list" class="flex-1 overflow-y-auto max-h-[350px]"></div>
+    </div>
+
+    <!-- Action Modal -->
+    <div id="actionModal" class="fixed inset-0 bg-black/40 dark:bg-slate-950/80 z-[100] hidden modal-backdrop">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">⚖️</span>
+            </div>
+            <h2 class="text-lg font-semibold text-center mb-6 text-slate-900 dark:text-white">PILIH TINDAKAN</h2>
+            <div class="grid gap-3">
+                <button data-action="confirm-sita" class="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl shadow-lg shadow-red-600/20 transition active:scale-[0.98] flex flex-col items-center">
+                    <span>SITA HP</span>
+                    <span class="text-[8px] opacity-70">BARANG BUKTI DITAHAN</span>
+                </button>
+                <button data-action="confirm-catat" class="w-full py-3.5 bg-slate-600 hover:bg-slate-500 text-white font-medium rounded-xl transition active:scale-[0.98] flex flex-col items-center">
+                    <span>CATAT SAJA</span>
+                    <span class="text-[8px] opacity-70">TIDAK ADA PENYITAAN</span>
+                </button>
+                <button data-action="close-modal" class="mt-2 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs font-medium uppercase">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black/40 dark:bg-slate-950/80 z-[110] hidden modal-backdrop">
+        <div class="bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <h2 class="text-lg font-semibold mb-5 flex items-center gap-2 text-slate-900 dark:text-white">✏️ UPDATE DATA SISWA</h2>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" name="id">
+                <div>
+                    <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1 block">Nama Lengkap</label>
+                    <input type="text" name="nama" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1 block">Kelas</label>
+                        <select name="kelas" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 transition"></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1 block">Jurusan</label>
+                        <select name="jurusan" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 transition"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1 block">HP Siswa</label>
+                        <input type="tel" name="telpSiswa" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1 block">HP Ortu (WA)</label>
+                        <input type="tel" name="telpOrtu" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" data-action="close-modal" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-sm text-slate-300 transition">Batal</button>
+                    <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium text-white shadow-lg transition">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-black/40 dark:bg-slate-950/80 z-[120] hidden modal-backdrop">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <div class="w-16 h-16 bg-red-100 dark:bg-red-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">⚠️</span>
+            </div>
+            <h2 class="text-lg font-semibold text-center mb-2 text-slate-900 dark:text-white">RESET DATABASE</h2>
+            <p class="text-center text-xs text-slate-500 dark:text-slate-400 mb-6">Semua data akan dihapus permanen.</p>
+            <div class="grid gap-3">
+                <button data-action="delete-all" class="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl flex flex-col items-center transition">
+                    <span class="uppercase text-sm">Ya, Hapus Semua</span>
+                    <span class="text-[8px] opacity-70">DATA HILANG PERMANEN</span>
+                </button>
+                <button data-action="close-modal" class="py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Modal -->
+    <div id="maintenanceModal" class="fixed inset-0 bg-black/40 dark:bg-slate-950/80 z-[120] hidden modal-backdrop">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl border border-orange-200 dark:border-orange-800/50 p-6 modal-content shadow-2xl mx-4">
+            <div class="w-16 h-16 bg-orange-100 dark:bg-orange-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">🔧</span>
+            </div>
+            <h2 class="text-lg font-semibold text-center text-orange-600 dark:text-orange-400 mb-2">FITUR MAINTENANCE</h2>
+            <p class="text-center text-sm text-slate-600 dark:text-slate-300 mb-4">WhatsApp sedang dalam perbaikan.</p>
+            <div class="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/50 rounded-xl p-3 mb-4 text-xs text-slate-600 dark:text-slate-300">
+                <span class="block font-medium text-orange-600 dark:text-orange-300 mb-1">📋 Mohon Pengertiannya</span>
+                Kami sedang melakukan perbaikan untuk pengalaman lebih baik.
+            </div>
+            <button data-action="close-modal" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-medium transition">Mengerti</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl font-medium shadow-2xl transition-all duration-300 opacity-0 translate-y-10 pointer-events-none z-[200] flex items-center gap-3 border border-white/10 text-sm">
+        <span id="toastIcon">✅</span>
+        <span id="toastMsg"></span>
+    </div>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-lg border-t border-slate-800 px-6 py-2 flex justify-around items-center z-50">
+        <button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="p-2 flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+            <span class="text-[9px] mt-0.5">Beranda</span>
+        </button>
+        <button data-action="open-reset" class="p-2 flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <span class="text-[9px] mt-0.5">Reset</span>
+        </button>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden fixed inset-0 z-[150] bg-slate-950/95 backdrop-blur-sm overflow-y-auto">
+        <div class="min-h-screen p-5 md:p-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                            <span class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-xl shadow-lg">⚙️</span>
+                            ADMIN MODE
+                        </h1>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Kelola konfigurasi kelas & jurusan</p>
+                    </div>
+                    <button data-action="close-admin" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 transition">
+                        ← Kembali
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <div class="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">📚 Kelas</h2>
+                            <button data-action="add-kelas" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition">+ Tambah</button>
+                        </div>
+                        <div id="kelasTable" class="space-y-2"></div>
+                    </div>
+                    <div class="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">🎓 Jurusan</h2>
+                            <button data-action="add-jurusan" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition">+ Tambah</button>
+                        </div>
+                        <div id="jurusanTable" class="space-y-2"></div>
+                    </div>
+                </div>
+                <div class="mt-5 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/30 rounded-2xl p-4 text-sm text-slate-600 dark:text-slate-300">
+                    <span class="font-medium text-indigo-600 dark:text-indigo-300">💡 Real‑time sync:</span> Perubahan langsung tersimpan dan diterapkan ke seluruh sistem.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // Core Application - Enterprise V6.1 (Theme Fixed)
+        // ============================================================
+
+        class ConfigManager {
+            static CONFIG_KEY = 'app_config';
+            static DEFAULT_CONFIG = {
+                KELAS_OPTIONS: [
+                    { value: 'X', label: 'X' },
+                    { value: 'XI', label: 'XI' },
+                    { value: 'XII', label: 'XII' }
+                ],
+                JURUSAN_OPTIONS: [
+                    { value: 'TJKT 1', label: 'TJKT 1' },
+                    { value: 'TJKT 2', label: 'TJKT 2' },
+                    { value: 'TK 1', label: 'TK 1' },
+                    { value: 'TK 2', label: 'TK 2' },
+                    { value: 'MPLB', label: 'MPLB' },
+                    { value: 'AKL', label: 'AKL' },
+                    { value: 'Pemasaran', label: 'Pemasaran' },
+                    { value: 'ULP', label: 'ULP' }
+                ]
+            };
+
+            static loadConfig() {
+                try {
+                    const stored = localStorage.getItem(this.CONFIG_KEY);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed.KELAS_OPTIONS) && Array.isArray(parsed.JURUSAN_OPTIONS)) return parsed;
+                    }
+                } catch (e) {}
+                return this.DEFAULT_CONFIG;
+            }
+
+            static saveConfig(config) {
+                try { localStorage.setItem(this.CONFIG_KEY, JSON.stringify(config)); return true; } catch (e) { return false; }
+            }
+
+            static addItem(type, value, label) {
+                const config = this.loadConfig();
+                const key = type === 'kelas' ? 'KELAS_OPTIONS' : 'JURUSAN_OPTIONS';
+                if (config[key].some(item => item.value === value)) return { success: false, error: 'Item sudah ada' };
+                config[key].push({ value, label });
+                this.saveConfig(config);
+                return { success: true };
+            }
+
+            static removeItem(type, value) {
+                const config = this.loadConfig();
+                const key = type === 'kelas' ? 'KELAS_OPTIONS' : 'JURUSAN_OPTIONS';
+                config[key] = config[key].filter(item => item.value !== value);
+                this.saveConfig(config);
+                return { success: true };
+            }
+
+            static editItem(type, oldValue, newValue, newLabel) {
+                const config = this.loadConfig();
+                const key = type === 'kelas' ? 'KELAS_OPTIONS' : 'JURUSAN_OPTIONS';
+                const index = config[key].findIndex(item => item.value === oldValue);
+                if (index !== -1) {
+                    config[key][index] = { value: newValue, label: newLabel };
+                    this.saveConfig(config);
+                    return { success: true };
+                }
+                return { success: false, error: 'Item tidak ditemukan' };
+            }
+        }
+
+        const APP_CONFIG = Object.freeze({
+            VERSION: '6.1-THEME-FIXED',
+            STORAGE_KEY: 'RAZIA_APP_V6',
+            get KELAS_OPTIONS() { return ConfigManager.loadConfig().KELAS_OPTIONS; },
+            get JURUSAN_OPTIONS() { return ConfigManager.loadConfig().JURUSAN_OPTIONS.sort((a,b) => a.label.localeCompare(b.label)); },
+            VALIDATION: Object.freeze({ MIN_NAME_LENGTH: 3, MAX_NAME_LENGTH: 100, MIN_REASON_LENGTH: 5, PHONE_PATTERN: /^\d+$/, WARNING_THRESHOLD: 3 }),
+            UI: Object.freeze({ CHUNK_SIZE: 10, DEBOUNCE_DELAY: 150, TOAST_DURATION: 3000 })
+        });
+
+        const Utils = {
+            generateId: () => `ID-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            formatDate: (isoString) => {
+                try { return new Date(isoString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); }
+                catch (e) { return 'Invalid Date'; }
+            },
+            debounce: (func, wait) => {
+                let timeout;
+                return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); };
+            },
+            sanitize: (str) => {
+                if (typeof str !== 'string') return '';
+                const t = document.createElement('div');
+                t.textContent = str;
+                return t.innerHTML;
+            },
+            safeQuerySelector: (sel, parent = document) => { try { return parent.querySelector(sel); } catch(e) { return null; } }
+        };
+
+        class StorageService {
+            static KEY = APP_CONFIG.STORAGE_KEY;
+            static save(data) {
+                try {
+                    if (!Array.isArray(data)) throw new Error('Data must be an array');
+                    localStorage.setItem(this.KEY, JSON.stringify(data));
+                    return true;
+                } catch(e) {
+                    if (e.name === 'QuotaExceededError') throw new Error("Penyimpanan penuh!");
+                    throw new Error("Gagal menyimpan: " + e.message);
+                }
+            }
+            static load() {
+                try {
+                    const raw = localStorage.getItem(this.KEY);
+                    if (!raw) return [];
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch(e) { return []; }
+            }
+            static clear() {
+                try { localStorage.removeItem(this.KEY); return true; } catch(e) { return false; }
+            }
+        }
+
+        class ToastSystem {
+            static show(msg, icon = '✅', type = 'info') {
+                const el = document.getElementById('toast');
+                const msgEl = document.getElementById('toastMsg');
+                const iconEl = document.getElementById('toastIcon');
+                if (!el || !msgEl || !iconEl) return;
+                msgEl.innerText = msg;
+                iconEl.innerText = icon;
+                el.className = `fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 px-6 py-4 rounded-2xl font-bold shadow-2xl transition-all duration-500 z-[200] flex items-center gap-3 border border-white/10 text-sm ${type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`;
+                requestAnimationFrame(() => { el.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none'); });
+                if (this.timeout) clearTimeout(this.timeout);
+                this.timeout = setTimeout(() => { el.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none'); }, 3000);
+            }
+        }
+
+        class Validator {
+            static validateStudent(data) {
+                const errors = {};
+                const cfg = APP_CONFIG.VALIDATION;
+                if (!data.nama || data.nama.trim().length < cfg.MIN_NAME_LENGTH) errors.nama = `Nama minimal ${cfg.MIN_NAME_LENGTH} karakter`;
+                else if (data.nama.trim().length > cfg.MAX_NAME_LENGTH) errors.nama = `Nama maksimal ${cfg.MAX_NAME_LENGTH} karakter`;
+                if (!data.kelas) errors.kelas = "Kelas wajib diisi";
+                if (!data.jurusan) errors.jurusan = "Jurusan wajib diisi";
+                if (!data.alasan || data.alasan.trim().length < cfg.MIN_REASON_LENGTH) errors.alasan = `Kronologi minimal ${cfg.MIN_REASON_LENGTH} karakter`;
+                if (data.telpSiswa && !cfg.PHONE_PATTERN.test(data.telpSiswa)) errors.telpSiswa = "Hanya angka";
+                if (data.telpOrtu && !cfg.PHONE_PATTERN.test(data.telpOrtu)) errors.telpOrtu = "Hanya angka";
+                return { valid: Object.keys(errors).length === 0, errors };
+            }
+            static validateSchema(obj) {
+                return obj && typeof obj === 'object' && typeof obj.id === 'string' && typeof obj.nama === 'string' && Array.isArray(obj.history);
+            }
+        }
+
+        class StudentModel {
+            constructor(data) {
+                this.id = data.id || Utils.generateId();
+                this.nama = data.nama;
+                this.kelas = data.kelas || 'X';
+                this.jurusan = data.jurusan || '';
+                this.telpSiswa = data.telpSiswa || '';
+                this.telpOrtu = data.telpOrtu || '';
+                this.statusSitaan = data.statusSitaan || 'TIADA';
+                this.history = data.history || [];
+            }
+            addViolation(reason, mode) {
+                this.history.unshift({ timestamp: new Date().toISOString(), reason, mode });
+                if (mode === 'SITA') this.statusSitaan = 'BELUM';
+            }
+            toggleStatus() {
+                const states = ['BELUM', 'SELESAI', 'TIADA'];
+                let idx = states.indexOf(this.statusSitaan);
+                if (idx === -1) idx = 0;
+                this.statusSitaan = states[(idx + 1) % states.length];
+            }
+        }
+
+        class DOMInjector {
+            static injectOptions(selectElement, options, placeholderText = null) {
+                if (!selectElement) return;
+                selectElement.innerHTML = '';
+                if (placeholderText) {
+                    const p = document.createElement('option');
+                    p.value = ''; p.disabled = true; p.selected = true; p.textContent = placeholderText;
+                    selectElement.appendChild(p);
+                }
+                options.forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = opt.value; o.textContent = opt.label;
+                    selectElement.appendChild(o);
+                });
+            }
+        }
+
+        class CustomSelect {
+            constructor(originalSelect) {
+                this.originalSelect = originalSelect;
+                this.originalSelect.style.display = 'none';
+                this.wrapper = this.createWrapper();
+                this.originalSelect.parentNode.insertBefore(this.wrapper, this.originalSelect);
+                document.addEventListener('click', (e) => {
+                    if (!this.wrapper.contains(e.target)) {
+                        this.wrapper.classList.remove('open');
+                        const arrow = this.wrapper.querySelector('.arrow');
+                        if (arrow) arrow.classList.remove('rotate-180');
+                    }
+                });
+            }
+            createWrapper() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-select-wrapper w-full';
+                const trigger = document.createElement('div');
+                const initialText = this.originalSelect.options[this.originalSelect.selectedIndex]?.text || 'Pilih';
+                trigger.className = 'custom-select-trigger w-full';
+                trigger.innerHTML = `<span>${initialText}</span><span class="arrow transition-transform duration-300 text-xs">▼</span>`;
+                trigger.addEventListener('click', () => {
+                    wrapper.classList.toggle('open');
+                    trigger.querySelector('.arrow').classList.toggle('rotate-180');
+                });
+                const optContainer = document.createElement('div');
+                optContainer.className = 'custom-select-options';
+                Array.from(this.originalSelect.options).forEach(opt => {
+                    if (opt.disabled) return;
+                    const div = document.createElement('div');
+                    div.className = `custom-option ${opt.selected ? 'selected' : ''}`;
+                    div.textContent = opt.text;
+                    div.dataset.value = opt.value;
+                    div.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.selectOption(opt.value, opt.text, trigger, optContainer);
+                    });
+                    optContainer.appendChild(div);
+                });
+                wrapper.appendChild(trigger);
+                wrapper.appendChild(optContainer);
+                return wrapper;
+            }
+            selectOption(value, text, trigger, container) {
+                this.originalSelect.value = value;
+                this.originalSelect.dispatchEvent(new Event('change'));
+                trigger.querySelector('span').textContent = text;
+                this.wrapper.classList.remove('open');
+                trigger.querySelector('.arrow').classList.remove('rotate-180');
+                container.querySelectorAll('.custom-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.dataset.value === value) opt.classList.add('selected');
+                });
+            }
+        }
+
+        class DOMRenderer {
+            constructor() {
+                this.container = document.getElementById('studentContainer');
+                this.statsContainer = document.getElementById('stats-container');
+                this.sentinel = document.getElementById('sentinel');
+                this.observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting) document.dispatchEvent(new CustomEvent('req-load-more'));
+                }, { rootMargin: '100px' });
+                if (this.sentinel) this.observer.observe(this.sentinel);
+            }
+
+            renderStats(students) {
+                const total = students.length;
+                const sita = students.filter(s => s.statusSitaan === 'BELUM').length;
+                const clear = students.filter(s => s.statusSitaan === 'SELESAI').length;
+                // Light: white bg, dark: slate-800 bg
+                this.statsContainer.innerHTML = `
+                    <div class="stat-card bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm text-center hover:shadow-md transition-shadow">
+                        <p class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Total Siswa</p>
+                        <h4 class="text-xl font-black italic text-slate-800 dark:text-white">${total}</h4>
+                    </div>
+                    <div class="stat-card bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm text-center hover:shadow-md transition-shadow">
+                        <p class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Disita</p>
+                        <h4 class="text-xl font-black text-red-600 dark:text-red-400 italic">${sita}</h4>
+                    </div>
+                    <div class="stat-card bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm text-center hover:shadow-md transition-shadow">
+                        <p class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Selesai</p>
+                        <h4 class="text-xl font-black text-emerald-600 dark:text-emerald-400 italic">${clear}</h4>
+                    </div>
+                `;
+            }
+
+            createCard(s) {
+                const el = document.createElement('div');
+                const hasWarning = s.history.length >= APP_CONFIG.VALIDATION.WARNING_THRESHOLD;
+                const isMaintenance = true; // whatsapp maintenance flag
+
+                const borderClass = s.statusSitaan === 'BELUM' ? 'border-red-400/50' : 'border-slate-200 dark:border-slate-700';
+                el.className = `student-card bg-white dark:bg-slate-800 border-2 ${borderClass} rounded-[2.5rem] p-6 md:p-8 transition-all hover:shadow-xl animate-slide-up group relative overflow-hidden`;
+                el.dataset.studentId = s.id;
+
+                let badge = `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[8px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider">Aman</span>`;
+                if (s.statusSitaan === 'BELUM') badge = `<span class="bg-red-500 text-white text-[8px] px-2.5 py-1 rounded-lg font-black animate-pulse uppercase tracking-wider shadow-lg shadow-red-500/30">Disita</span>`;
+                if (s.statusSitaan === 'SELESAI') badge = `<span class="bg-emerald-500 text-white text-[8px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider shadow-lg shadow-emerald-500/30">Selesai</span>`;
+
+                let waButtonClass, waButtonTitle, waButtonOverlay;
+                if (isMaintenance) {
+                    waButtonClass = 'bg-orange-500 dark:bg-orange-600 cursor-not-allowed opacity-80';
+                    waButtonTitle = '🔧 WhatsApp sedang dalam perbaikan';
+                    waButtonOverlay = '<div class="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-[2px] flex items-center justify-center"><span class="text-[8px] font-black text-white bg-orange-600 px-2 py-1 rounded-lg shadow-lg">MAINTENANCE</span></div>';
+                } else if (!hasWarning) {
+                    waButtonClass = 'bg-slate-200 dark:bg-slate-600 cursor-not-allowed opacity-70';
+                    waButtonTitle = 'Belum mencapai batas peringatan (3x)';
+                    waButtonOverlay = '<div class="absolute inset-0 bg-slate-500/10 backdrop-blur-[1px]"></div>';
+                } else {
+                    waButtonClass = 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20';
+                    waButtonTitle = 'Hubungi Orang Tua';
+                    waButtonOverlay = '';
+                }
+
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-6 relative z-10">
+                        <div class="cursor-pointer" onclick="App.dispatchEvent('req-edit', '${s.id}')">
+                            <h3 class="text-xl font-black text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${Utils.sanitize(s.nama)}</h3>
+                            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter mt-1">Kelas ${Utils.sanitize(s.kelas)} - ${Utils.sanitize(s.jurusan)} • ${s.telpSiswa || 'No Phone'}</p>
+                        </div>
+                        <button onclick="App.dispatchEvent('req-delete', '${s.id}')" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-900/20 transition-all" title="Hapus Data">
+                            <span class="text-sm">🗑️</span>
+                        </button>
+                    </div>
+
+                    <div class="history-box bg-slate-900/50 p-5 rounded-3xl mb-6 border border-slate-100 dark:border-slate-700/50">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest italic flex items-center gap-1">
+                                <span>History</span>
+                                <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 rounded text-[8px]">${s.history.length}</span>
+                            </span>
+                            ${badge}
+                        </div>
+                        <div class="space-y-4 max-h-32 overflow-y-auto pr-2">
+                            ${s.history.map(h => `
+                                <div class="relative pl-4 border-l-2 history-item-border border-slate-200 dark:border-slate-700">
+                                    <div class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ${h.mode === 'SITA' ? 'bg-red-500' : 'bg-slate-400'}"></div>
+                                    <p class="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">${Utils.formatDate(h.timestamp)} • ${h.mode}</p>
+                                    <p class="text-xs italic text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2 hover:line-clamp-none cursor-default">"${Utils.sanitize(h.reason)}"</p>
+                                </div>
+                            `).join('')}
+                            ${s.history.length === 0 ? '<p class="text-center text-[10px] text-slate-400 dark:text-slate-500 italic py-2">Belum ada riwayat</p>' : ''}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 relative z-10">
+                        <button onclick="App.dispatchEvent('req-quick-add', '${s.id}')" class="py-3 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex flex-col items-center justify-center">
+                            <span class="text-lg mb-0.5">⚡</span>TAMBAH
+                        </button>
+                        <button onclick="App.dispatchEvent('req-toggle-status', '${s.id}')" class="py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 text-[9px] font-black rounded-xl uppercase transition-all active:scale-95 flex flex-col items-center justify-center">
+                            <span class="text-lg mb-0.5">🔄</span>STATUS
+                        </button>
+                        <button onclick="App.dispatchEvent('req-wa', '${s.id}')"
+                            class="py-3 ${waButtonClass} text-white text-[9px] font-black rounded-xl uppercase shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center relative overflow-hidden"
+                            title="${waButtonTitle}">
+                            <span class="text-lg mb-0.5">${isMaintenance ? '🔧' : '💬'}</span>
+                            WHATSAPP
+                            ${waButtonOverlay}
+                        </button>
+                    </div>
+                `;
+                return el;
+            }
+
+            clearList() { this.container.innerHTML = ''; }
+
+            appendCards(nodes) {
+                const fragment = document.createDocumentFragment();
+                nodes.forEach(n => fragment.appendChild(n));
+                this.container.appendChild(fragment);
+                if (this.sentinel) this.container.appendChild(this.sentinel);
+            }
+
+            toggleLoading(isLoading) {
+                const ind = document.getElementById('loading-indicator');
+                if (ind) { isLoading ? ind.classList.remove('hidden') : ind.classList.add('hidden'); }
+            }
+
+            renderNotifications(students) {
+                const badge = document.getElementById('notif-badge');
+                const list = document.getElementById('notif-list');
+                const countText = document.getElementById('notif-count-text');
+                const warningStudents = students.filter(s => s.history.length >= APP_CONFIG.VALIDATION.WARNING_THRESHOLD);
+                const count = warningStudents.length;
+                if (count > 0) {
+                    badge.innerText = count; badge.classList.remove('hidden');
+                    countText.innerText = `${count} Siswa`;
+                    list.innerHTML = `
+                        <div class="px-4 py-2 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-[9px] font-bold text-center uppercase tracking-widest border-b border-red-100 dark:border-red-500/10">
+                            Wajib Panggilan Orang Tua
+                        </div>
+                    ` + warningStudents.map(s => `
+                        <div class="notif-item flex items-center gap-3 p-3 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition" onclick="App.dispatchEvent('req-focus-student', '${s.id}')">
+                            <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-lg flex-shrink-0">⚠️</div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-[11px] font-black text-slate-800 dark:text-white truncate">${Utils.sanitize(s.nama)}</h4>
+                                <p class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">${s.kelas} - ${s.jurusan} • ${s.history.length}x</p>
+                            </div>
+                            <button onclick="event.stopPropagation(); App.dispatchEvent('req-wa', '${s.id}')" class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors text-xs flex-shrink-0">💬</button>
+                        </div>
+                    `).join('');
+                } else {
+                    badge.classList.add('hidden');
+                    countText.innerText = '0 Siswa';
+                    list.innerHTML = `
+                        <div class="p-8 text-center opacity-40">
+                            <span class="text-3xl block mb-2">🎈</span>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Semua Aman</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        class AppController {
+            constructor() {
+                this.students = [];
+                this.dom = new DOMRenderer();
+                this.pendingData = null;
+                this.searchTerm = '';
+                this.activeFilterKelas = 'all';
+                this.activeFilterJurusan = 'all';
+                this.displayedCount = 0;
+                this.chunkSize = APP_CONFIG.UI.CHUNK_SIZE;
+                this.whatsappMaintenance = true;
+            }
+
+            async init() {
+                try {
+
+                    this.injectDynamicOptions();
+
+                    const rawData = StorageService.load();
+                    this.students = rawData.filter(d => Validator.validateSchema(d)).map(d => new StudentModel(d));
+
+                    this.attachGlobalListeners();
+                    this.refreshUI(true);
+                } catch (error) {
+                    this.handleCriticalError(error);
+                }
+            }
+
+            injectDynamicOptions() {
+                const mainKelas = Utils.safeQuerySelector('select[name="kelas"]');
+                if (mainKelas) DOMInjector.injectOptions(mainKelas, APP_CONFIG.KELAS_OPTIONS, 'Pilih Kelas...');
+
+                const mainJurusan = Utils.safeQuerySelector('select[name="jurusan"]');
+                if (mainJurusan) DOMInjector.injectOptions(mainJurusan, APP_CONFIG.JURUSAN_OPTIONS, 'Pilih Jurusan...');
+
+                const editKelas = Utils.safeQuerySelector('#editForm select[name="kelas"]');
+                if (editKelas) DOMInjector.injectOptions(editKelas, APP_CONFIG.KELAS_OPTIONS);
+
+                const editJurusan = Utils.safeQuerySelector('#editForm select[name="jurusan"]');
+                if (editJurusan) DOMInjector.injectOptions(editJurusan, APP_CONFIG.JURUSAN_OPTIONS);
+
+                const mobileKelas = Utils.safeQuerySelector('#mobile-filter-kelas');
+                if (mobileKelas) {
+                    mobileKelas.innerHTML = '<option value="all">📚 Semua Kelas</option>';
+                    APP_CONFIG.KELAS_OPTIONS.forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value; o.textContent = `Kelas ${opt.label}`;
+                        mobileKelas.appendChild(o);
+                    });
+                }
+
+                const mobileJurusan = Utils.safeQuerySelector('#mobile-filter-jurusan');
+                if (mobileJurusan) {
+                    mobileJurusan.innerHTML = '<option value="all">🎓 Semua Jurusan</option>';
+                    APP_CONFIG.JURUSAN_OPTIONS.forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value; o.textContent = opt.label;
+                        mobileJurusan.appendChild(o);
+                    });
+                }
+            }
+
+            renderAdminPanel() {
+                const kelasTable = document.getElementById('kelasTable');
+                const jurusanTable = document.getElementById('jurusanTable');
+                if (!kelasTable || !jurusanTable) return;
+
+                kelasTable.innerHTML = APP_CONFIG.KELAS_OPTIONS.map(item => `
+                    <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">${item.label}</span>
+                            <span class="font-bold text-sm text-slate-700 dark:text-slate-200">Kelas ${item.label}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button data-action="edit-kelas" data-value="${item.value}" data-label="${item.label}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition">✏️ Edit</button>
+                            <button data-action="delete-kelas" data-value="${item.value}" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition">🗑️ Hapus</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                jurusanTable.innerHTML = APP_CONFIG.JURUSAN_OPTIONS.map(item => `
+                    <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold text-xs">${item.label.substring(0,2)}</span>
+                            <span class="font-bold text-sm text-slate-700 dark:text-slate-200">${item.label}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button data-action="edit-jurusan" data-value="${item.value}" data-label="${item.label}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition">✏️ Edit</button>
+                            <button data-action="delete-jurusan" data-value="${item.value}" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition">🗑️ Hapus</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            instantSync() {
+                document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+                    const select = wrapper.nextElementSibling;
+                    if (select && select.tagName === 'SELECT') select.style.display = '';
+                    wrapper.remove();
+                });
+                this.injectDynamicOptions();
+                this.initCustomSelects();
+                this.renderAdminPanel();
+                this.refreshUI(true);
+            }
+
+            initCustomSelects() {
+                const selectors = [
+                    'select[name="kelas"]',
+                    'select[name="jurusan"]',
+                    '#editForm select[name="kelas"]',
+                    '#editForm select[name="jurusan"]',
+                    '#mobile-filter-kelas',
+                    '#mobile-filter-jurusan'
+                ];
+                selectors.forEach(sel => {
+                    const el = document.querySelector(sel);
+                    if (el) new CustomSelect(el);
+                });
+            }
+
+            attachGlobalListeners() {
+                this.initCustomSelects();
+
+                window.App = { dispatchEvent: (name, detail) => document.dispatchEvent(new CustomEvent(name, { detail })) };
+
+                const form = document.getElementById('mainForm');
+                if (form) form.addEventListener('submit', (e) => { e.preventDefault(); this.handleFormSubmit(new FormData(form)); });
+
+                const searchBar = document.getElementById('searchBar');
+                const clearBtn = document.getElementById('clearSearch');
+                if (searchBar && clearBtn) {
+                    const toggleBtn = () => {
+                        searchBar.value.length > 0 ? clearBtn.classList.remove('opacity-0', 'pointer-events-none') : clearBtn.classList.add('opacity-0', 'pointer-events-none');
+                    };
+                    const debouncedRefresh = Utils.debounce(() => this.refreshUI(true), APP_CONFIG.UI.DEBOUNCE_DELAY);
+                    searchBar.addEventListener('input', (e) => { this.searchTerm = e.target.value; toggleBtn(); debouncedRefresh(); });
+                    clearBtn.addEventListener('click', () => { searchBar.value = ''; this.searchTerm = ''; toggleBtn(); this.refreshUI(true); searchBar.focus(); });
+                    this.updateSearchUI = toggleBtn;
+                }
+
+                const editForm = document.getElementById('editForm');
+                if (editForm) editForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleEditSubmit(new FormData(e.target)); });
+
+                const mobileFilterKelas = document.getElementById('mobile-filter-kelas');
+                if (mobileFilterKelas) mobileFilterKelas.addEventListener('change', (e) => { this.activeFilterKelas = e.target.value; this.refreshUI(true); });
+
+                const mobileFilterJurusan = document.getElementById('mobile-filter-jurusan');
+                if (mobileFilterJurusan) mobileFilterJurusan.addEventListener('change', (e) => { this.activeFilterJurusan = e.target.value; this.refreshUI(true); });
+
+                document.addEventListener('click', (e) => {
+                    const action = e.target.closest('[data-action]')?.dataset.action;
+                    if (!action) return;
+                    switch(action) {
+                        case 'open-reset': this.toggleModal('resetModal', true); break;
+                        case 'close-modal': this.closeAllModals(); break;
+                        case 'delete-all': this.deleteAllData(); break;
+                        case 'confirm-sita': this.finalizeViolation('SITA'); break;
+                        case 'confirm-catat': this.finalizeViolation('CATAT'); break;
+                        case 'toggle-notifications': this.toggleNotifications(); break;
+                        case 'toggle-admin':
+                            const adminPanel = document.getElementById('adminPanel');
+                            if (adminPanel) { adminPanel.classList.remove('hidden'); this.renderAdminPanel(); }
+                            break;
+                        case 'close-admin':
+                            document.getElementById('adminPanel')?.classList.add('hidden');
+                            break;
+                        case 'add-kelas': {
+                            const value = prompt('Masukkan kode kelas (contoh: XIII):');
+                            if (value) {
+                                const result = ConfigManager.addItem('kelas', value, value);
+                                result.success ? (ToastSystem.show(`Kelas ${value} ditambahkan`, '✅'), this.instantSync()) : ToastSystem.show(result.error, '⚠️', 'error');
+                            }
+                            break;
+                        }
+                        case 'add-jurusan': {
+                            const value = prompt('Masukkan nama jurusan (contoh: TJKT 3):');
+                            if (value) {
+                                const result = ConfigManager.addItem('jurusan', value, value);
+                                result.success ? (ToastSystem.show(`Jurusan ${value} ditambahkan`, '✅'), this.instantSync()) : ToastSystem.show(result.error, '⚠️', 'error');
+                            }
+                            break;
+                        }
+                        case 'edit-kelas': {
+                            const oldValue = e.target.closest('[data-value]')?.dataset.value;
+                            if (!oldValue) break;
+                            const newValue = prompt('Edit kode kelas:', oldValue);
+                            if (newValue && newValue !== oldValue) {
+                                const result = ConfigManager.editItem('kelas', oldValue, newValue, newValue);
+                                result.success ? (ToastSystem.show('Kelas diupdate', '✅'), this.instantSync()) : ToastSystem.show(result.error, '⚠️', 'error');
+                            }
+                            break;
+                        }
+                        case 'edit-jurusan': {
+                            const oldValue = e.target.closest('[data-value]')?.dataset.value;
+                            if (!oldValue) break;
+                            const newValue = prompt('Edit nama jurusan:', oldValue);
+                            if (newValue && newValue !== oldValue) {
+                                const result = ConfigManager.editItem('jurusan', oldValue, newValue, newValue);
+                                result.success ? (ToastSystem.show('Jurusan diupdate', '✅'), this.instantSync()) : ToastSystem.show(result.error, '⚠️', 'error');
+                            }
+                            break;
+                        }
+                        case 'delete-kelas': {
+                            const value = e.target.closest('[data-value]')?.dataset.value;
+                            if (value && confirm(`Hapus Kelas ${value}?`)) {
+                                ConfigManager.removeItem('kelas', value);
+                                ToastSystem.show(`Kelas ${value} dihapus`, '🗑️');
+                                this.instantSync();
+                            }
+                            break;
+                        }
+                        case 'delete-jurusan': {
+                            const value = e.target.closest('[data-value]')?.dataset.value;
+                            if (value && confirm(`Hapus Jurusan ${value}?`)) {
+                                ConfigManager.removeItem('jurusan', value);
+                                ToastSystem.show(`Jurusan ${value} dihapus`, '🗑️');
+                                this.instantSync();
+                            }
+                            break;
+                        }
+                    }
+                });
+
+                // Close notif panel on outside click
+                document.addEventListener('click', (e) => {
+                    const panel = document.getElementById('notif-panel');
+                    const btn = document.getElementById('notif-btn');
+                    if (panel && !panel.contains(e.target) && (!btn || !btn.contains(e.target))) panel.classList.remove('active');
+                });
+
+                document.addEventListener('req-load-more', () => this.loadMore());
+                document.addEventListener('req-delete', (e) => this.deleteStudent(e.detail));
+                document.addEventListener('req-toggle-status', (e) => this.toggleStatus(e.detail));
+                document.addEventListener('req-quick-add', (e) => this.quickAdd(e.detail));
+                document.addEventListener('req-edit', (e) => this.openEdit(e.detail));
+                document.addEventListener('req-wa', (e) => this.reqWa(e.detail));
+                document.addEventListener('req-focus-student', (e) => this.focusStudent(e.detail));
+            }
+
+            refreshUI(reset = false) {
+                if (reset) { this.dom.clearList(); this.displayedCount = 0; }
+
+                const filtered = this.students.filter(s => {
+                    const matchSearch = s.nama.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                        s.jurusan.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                        s.kelas.toLowerCase().includes(this.searchTerm.toLowerCase());
+                    const matchKelas = this.activeFilterKelas === 'all' || s.kelas === this.activeFilterKelas;
+                    const matchJurusan = this.activeFilterJurusan === 'all' || s.jurusan === this.activeFilterJurusan;
+                    return matchSearch && matchKelas && matchJurusan;
+                });
+
+                this.dom.renderStats(this.students);
+                this.dom.renderNotifications(this.students);
+
+                const nextBatch = filtered.slice(this.displayedCount, this.displayedCount + this.chunkSize);
+                if (nextBatch.length > 0) {
+                    this.dom.appendCards(nextBatch.map(s => this.dom.createCard(s)));
+                    this.displayedCount += nextBatch.length;
+                    const sentinel = this.dom.sentinel;
+                    if (sentinel) {
+                        this.displayedCount >= filtered.length ? sentinel.classList.add('hidden') : sentinel.classList.remove('hidden');
+                    }
+                } else if (reset) {
+                    this.dom.container.innerHTML = `
+                        <div class="col-span-full flex flex-col items-center justify-center py-12 opacity-50">
+                            <span class="text-6xl block mb-4">😶‍🌫️</span>
+                            <p class="text-slate-500 dark:text-slate-400 font-bold text-lg">Data tidak ditemukan</p>
+                        </div>
+                    `;
+                    if (this.dom.sentinel) this.dom.sentinel.classList.add('hidden');
+                }
+            }
+
+            loadMore() {
+                this.dom.toggleLoading(true);
+                setTimeout(() => { this.refreshUI(false); this.dom.toggleLoading(false); }, 300);
+            }
+
+            handleFormSubmit(formData) {
+                const data = Object.fromEntries(formData.entries());
+                const { valid, errors } = Validator.validateStudent(data);
+                this.clearFormErrors();
+                if (!valid) { this.showFormErrors(errors); ToastSystem.show("Periksa kembali inputan Anda", "⚠️", "error"); return; }
+                this.pendingData = { ...data, isNew: true };
+                this.toggleModal('actionModal', true);
+            }
+
+            finalizeViolation(mode) {
+                if (this.pendingData.isNew) {
+                    const existing = this.students.find(s => s.nama.toLowerCase() === this.pendingData.nama.toLowerCase() && s.kelas.toLowerCase() === this.pendingData.kelas.toLowerCase());
+                    if (existing) {
+                        existing.addViolation(this.pendingData.alasan, mode);
+                        this.students = this.students.filter(s => s !== existing);
+                        this.students.unshift(existing);
+                        ToastSystem.show("Data siswa diperbarui!", "✅");
+                    } else {
+                        const student = new StudentModel(this.pendingData);
+                        student.addViolation(this.pendingData.alasan, mode);
+                        this.students.unshift(student);
+                        ToastSystem.show("Siswa Baru Ditambahkan!", "🎉");
+                    }
+                } else if (this.pendingData.isQuick) {
+                    const student = this.students.find(s => s.id === this.pendingData.studentId);
+                    if (student) {
+                        student.addViolation(this.pendingData.alasan, mode);
+                        this.students = this.students.filter(s => s.id !== student.id);
+                        this.students.unshift(student);
+                        ToastSystem.show("Pelanggaran ditambahkan!");
+                    }
+                }
+                this.saveState();
+                this.closeAllModals();
+                document.getElementById('mainForm')?.reset();
+                this.pendingData = null;
+            }
+
+            saveState() { StorageService.save(this.students); this.refreshUI(true); }
+
+            deleteStudent(id) {
+                if (confirm("Hapus data ini secara permanen?")) {
+                    this.students = this.students.filter(s => s.id !== id);
+                    this.saveState();
+                    ToastSystem.show("Data dihapus", "🗑️");
+                }
+            }
+
+            quickAdd(id) {
+                const reason = prompt("Masukkan detail pelanggaran:");
+                if (!reason) return;
+                this.pendingData = { studentId: id, alasan: reason, isQuick: true };
+                this.toggleModal('actionModal', true);
+            }
+
+            toggleStatus(id) {
+                const s = this.students.find(x => x.id === id);
+                if (s) { s.toggleStatus(); this.saveState(); ToastSystem.show(`Status: ${s.statusSitaan}`); }
+            }
+
+            openEdit(id) {
+                const s = this.students.find(x => x.id === id);
+                if (!s) return;
+                const form = document.getElementById('editForm');
+                if (!form) return;
+                form.id.value = s.id;
+                form.nama.value = s.nama;
+                form.kelas.value = s.kelas;
+                form.jurusan.value = s.jurusan;
+                form.telpSiswa.value = s.telpSiswa;
+                form.telpOrtu.value = s.telpOrtu;
+                this.toggleModal('editModal', true);
+            }
+
+            handleEditSubmit(formData) {
+                const data = Object.fromEntries(formData.entries());
+                const s = this.students.find(x => x.id === data.id);
+                if (s) {
+                    s.nama = data.nama; s.kelas = data.kelas; s.jurusan = data.jurusan;
+                    s.telpSiswa = data.telpSiswa; s.telpOrtu = data.telpOrtu;
+                    this.saveState(); this.closeAllModals(); ToastSystem.show("Data diperbarui!");
+                }
+            }
+
+            reqWa(id) {
+                if (this.whatsappMaintenance) { this.toggleModal('maintenanceModal', true); return; }
+                const s = this.students.find(x => x.id === id);
+                if (!s || !s.telpOrtu) { ToastSystem.show("Nomor WA Ortu tidak tersedia", "⚠️", "error"); return; }
+                let phone = s.telpOrtu.replace(/\D/g, '');
+                if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                else if (!phone.startsWith('62')) phone = '62' + phone;
+                const text = `Halo, saya dari SMKN 1 Malteng. Menginfokan bahwa siswa atas nama *${s.nama}* (Kelas: *${s.kelas} - ${s.jurusan}*) telah melakukan pelanggaran ke-${s.history.length}.\n\nKronologi terakhir: ${s.history[0]?.reason || '-'}`;
+                const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            }
+
+            deleteAllData() {
+                const confirmation = prompt("⚠️ PERINGATAN KERAS ⚠️\n\nSemua data akan dihapus permanen.\n\nKetik 'HAPUS' untuk melanjutkan:");
+                if (confirmation === 'HAPUS') {
+                    this.students = [];
+                    StorageService.clear();
+                    this.saveState();
+                    this.closeAllModals();
+                    ToastSystem.show("Database berhasil di-reset.", "💥");
+                } else if (confirmation !== null) {
+                    ToastSystem.show("Penghapusan dibatalkan.", "ℹ️");
+                }
+            }
+
+            toggleModal(id, show) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (show) {
+                    el.classList.remove('hidden');
+                    requestAnimationFrame(() => el.classList.add('modal-active'));
+                } else {
+                    el.classList.remove('modal-active');
+                    setTimeout(() => el.classList.add('hidden'), 300);
+                }
+            }
+
+            closeAllModals() {
+                document.querySelectorAll('.modal-active').forEach(el => this.toggleModal(el.id, false));
+            }
+
+            toggleNotifications() {
+                document.getElementById('notif-panel')?.classList.toggle('active');
+            }
+
+            focusStudent(id) {
+                const s = this.students.find(x => x.id === id);
+                if (!s) return;
+                this.activeFilterKelas = 'all';
+                this.activeFilterJurusan = 'all';
+                this.searchTerm = s.nama;
+                const searchBar = document.getElementById('searchBar');
+                if (searchBar) searchBar.value = s.nama;
+                document.getElementById('mobile-filter-kelas')?.value && (document.getElementById('mobile-filter-kelas').value = 'all');
+                document.getElementById('mobile-filter-jurusan')?.value && (document.getElementById('mobile-filter-jurusan').value = 'all');
+                this.refreshUI(true);
+                if (this.updateSearchUI) this.updateSearchUI();
+                document.getElementById('notif-panel')?.classList.remove('active');
+                const container = document.getElementById('studentContainer');
+                if (container) window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
+                ToastSystem.show(`Menampilkan: ${s.nama}`, "🔍");
+            }
+
+            showFormErrors(errors) {
+                for (const [key, msg] of Object.entries(errors)) {
+                    const p = document.querySelector(`[data-error="${key}"]`);
+                    if (p) { p.innerText = msg; p.classList.remove('hidden'); }
+                }
+            }
+
+            clearFormErrors() {
+                document.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('input, textarea').forEach(el => el.classList.remove('border-red-500'));
+            }
+
+            handleCriticalError(err) {
+                const box = document.getElementById('global-error');
+                const msg = document.getElementById('error-message');
+                if (box && msg) { msg.innerText = err.message || "Terjadi kesalahan sistem."; box.classList.remove('hidden'); box.classList.add('flex'); }
+            }
+        }
+
+        window.onerror = (msg) => console.error("Global Error:", msg);
+
+        const app = new AppController();
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
