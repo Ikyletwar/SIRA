@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Sistem Razia • SMKN 1 Malteng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: "Inter", system-ui, sans-serif; }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
+
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            opacity: 0;
+            visibility: hidden;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .modal-active { opacity: 1 !important; visibility: visible !important; }
+        .modal-content {
+            transform: scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-active .modal-content { transform: scale(1); }
+
+        .notification-panel {
+            position: fixed;
+            top: 4rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            width: 90%;
+            max-width: 380px;
+            max-height: 70vh;
+            border-radius: 2rem;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+        }
+        .notification-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (min-width: 640px) {
+            .notification-panel { left: auto; right: 1rem; transform: translateY(-10px); width: 360px; }
+            .notification-panel.active { transform: translateY(0); }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .custom-select-wrapper { position: relative; user-select: none; }
+        .custom-select-trigger {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 0.875rem 1.25rem;
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .custom-select-trigger:hover { border-color: #3b82f6; }
+        .custom-select-options {
+            position: absolute;
+            top: 110%;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 200;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .custom-select-wrapper.open .custom-select-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .custom-option {
+            padding: 0.75rem 1.25rem;
+            margin: 0.25rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.75rem;
+            color: #cbd5e1;
+        }
+        .custom-option:hover { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .custom-option.selected { background: #2563eb; color: white !important; }
+
+        .student-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .student-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.5);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #ef4444;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        button:focus-visible, a:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased pb-28 md:pb-8 selection:bg-blue-500/30">
+
+    <!-- Error Boundary -->
+    <div id="global-error" class="fixed inset-0 z-[999] bg-black/80 hidden items-center justify-center p-6 text-center backdrop-blur">
+        <div class="max-w-sm bg-red-900/80 p-8 rounded-3xl border border-red-700 shadow-2xl">
+            <span class="text-5xl mb-4 block">😵</span>
+            <h2 class="text-xl font-bold text-red-300 mb-2">Terjadi Kesalahan</h2>
+            <p class="text-red-200/70 text-sm mb-6" id="error-message">Aplikasi mengalami masalah tak terduga.</p>
+            <button onclick="window.location.reload()" class="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500 transition w-full">Muat Ulang</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-[60] bg-slate-950/80 backdrop-blur-xl border-b border-slate-800 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <span class="text-white font-black text-sm">SMK</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm leading-tight text-white">SMKN 1 MALTENG</h1>
+                    <p class="text-[10px] font-medium text-slate-400 tracking-wide">RAZIA • ENTERPRISE V6</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button data-action="toggle-admin" class="p-2.5 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-400 hover:bg-indigo-600/30 transition active:scale-95" aria-label="Admin Panel">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
+                    </svg>
+                </button>
+                <div class="relative">
+                    <button data-action="toggle-notifications" id="notif-btn" class="p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-700 transition active:scale-95" aria-label="Notifikasi">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                        </svg>
+                    </button>
+                    <span id="notif-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-slate-950 hidden">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 space-y-6 mt-5">
+        <div class="grid grid-cols-3 gap-3" id="stats-container">
+            <div class="shimmer h-20 rounded-2xl"></div>
+            <div class="shimmer h-20 rounded-2xl"></div>
+            <div class="shimmer h-20 rounded-2xl"></div>
+        </div>
+
+        <!-- Registration Form -->
+        <section class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 shadow-md backdrop-blur-sm">
+            <h2 class="text-base font-semibold flex items-center gap-2 mb-5 text-slate-200">
+                <span class="w-7 h-7 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 text-sm">✚</span>
+                REGISTRASI PELANGGARAN
+            </h2>
+            <form id="mainForm" class="space-y-4" novalidate>
+                <div>
+                    <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Nama Lengkap <span class="text-red-400">*</span></label>
+                    <input type="text" name="nama" required class="w-full bg-slate-800 border border-slate-700 p-3.5 rounded-xl text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" placeholder="Nama lengkap siswa...">
+                    <p class="text-[10px] text-red-400 mt-1 hidden" data-error="nama"></p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Kelas <span class="text-red-400">*</span></label>
+                        <select name="kelas" required class="w-full bg-slate-800 border border-slate-700 p-3.5 rounded-xl text-sm text-white outline-none focus:border-blue-500">
+                            <option value="" disabled selected>Pilih</option>
+                        </select>
+                        <p class="text-[10px] text-red-400 mt-1 hidden" data-error="kelas"></p>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Jurusan <span class="text-red-400">*</span></label>
+                        <select name="jurusan" required class="w-full bg-slate-800 border border-slate-700 p-3.5 rounded-xl text-sm text-white outline-none focus:border-blue-500">
+                            <option value="" disabled selected>Pilih</option>
+                        </select>
+                        <p class="text-[10px] text-red-400 mt-1 hidden" data-error="jurusan"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1 block">HP Siswa</label>
+                        <input type="tel" name="telpSiswa" class="w-full bg-slate-800 border border-slate-700 p-3.5 rounded-xl text-sm text-white placeholder-slate-500 focus:border-blue-500 outline-none" placeholder="08xx...">
+                        <p class="text-[10px] text-red-400 mt-1 hidden" data-error="telpSiswa"></p>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1 block">HP Ortu (WA)</label>
+                        <input type="tel" name="telpOrtu" class="w-full bg-slate-800 border border-slate-700 p-3.5 rounded-xl text-sm text-white placeholder-slate-500 focus:border-blue-500 outline-none" placeholder="08xx...">
+                        <p class="text-[10px] text-red-400 mt-1 hidden" data-error="telpOrtu"></p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1 block">Kronologi <span class="text-red-400">*</span></label>
+                    <textarea name="alasan" required rows="2" class="w-full bg-slate-800 border border-slate-700 p-3.5 rounded-xl text-sm text-white placeholder-slate-500 focus:border-blue-500 outline-none" placeholder="Jelaskan kronologi pelanggaran..."></textarea>
+                    <p class="text-[10px] text-red-400 mt-1 hidden" data-error="alasan"></p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 active:scale-[0.98]">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Simpan Data
+                </button>
+            </form>
+        </section>
+
+        <!-- Filter Section (Custom Select) -->
+        <div class="grid grid-cols-2 gap-3">
+            <div id="filter-kelas-wrapper"></div>
+            <div id="filter-jurusan-wrapper"></div>
+        </div>
+        <div class="relative group">
+            <input type="text" id="searchBar" placeholder="Cari nama, kelas, atau jurusan..." class="w-full bg-slate-900 border border-slate-700 pl-11 pr-12 py-3.5 rounded-2xl text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+            </span>
+            <button id="clearSearch" class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white flex items-center justify-center opacity-0 pointer-events-none transition" aria-label="Clear search">✕</button>
+            <div id="loading-indicator" class="absolute right-14 top-1/2 -translate-y-1/2 hidden">
+                <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        </div>
+
+        <!-- Student Cards Container -->
+        <div id="studentContainer" class="grid grid-cols-1 gap-4 pb-6 min-h-[200px]"></div>
+        <div id="sentinel" class="h-10 w-full flex justify-center items-center text-slate-500 text-xs opacity-70">
+            <span>Memuat lebih banyak...</span>
+        </div>
+    </main>
+
+    <!-- Notification Panel -->
+    <div id="notif-panel" class="notification-panel">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Peringatan (3x+)</h3>
+            <span id="notif-count-text" class="text-[9px] font-medium text-red-500 py-1 px-2 bg-red-500/10 rounded-full">0 Siswa</span>
+        </div>
+        <div id="notif-list" class="flex-1 overflow-y-auto max-h-[350px]"></div>
+    </div>
+
+    <!-- Action Modal -->
+    <div id="actionModal" class="fixed inset-0 bg-black/80 z-[100] hidden modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <div class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">⚖️</span>
+            </div>
+            <h2 id="actionModalTitle" class="text-lg font-semibold text-center mb-6 text-white">PILIH TINDAKAN</h2>
+            <div class="grid gap-3">
+                <button data-action="confirm-sita" class="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl shadow-lg shadow-red-600/20 transition active:scale-[0.98] flex flex-col items-center">
+                    <span>SITA HP</span>
+                    <span class="text-[8px] opacity-70">BARANG BUKTI DITAHAN</span>
+                </button>
+                <button data-action="confirm-catat" class="w-full py-3.5 bg-slate-600 hover:bg-slate-500 text-white font-medium rounded-xl transition active:scale-[0.98] flex flex-col items-center">
+                    <span>CATAT SAJA</span>
+                    <span class="text-[8px] opacity-70">TIDAK ADA PENYITAAN</span>
+                </button>
+                <button data-action="close-modal" class="mt-2 py-2 text-slate-400 hover:text-slate-200 text-xs font-medium uppercase">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black/80 z-[110] hidden modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+        <div class="bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <h2 id="editModalTitle" class="text-lg font-semibold mb-5 flex items-center gap-2 text-white">✏️ UPDATE DATA SISWA</h2>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" name="id">
+                <div>
+                    <label class="text-[11px] font-medium text-slate-400 uppercase mb-1 ml-1 block">Nama Lengkap</label>
+                    <input type="text" name="nama" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none focus:border-blue-500 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase mb-1 ml-1 block">Kelas</label>
+                        <select name="kelas" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none focus:border-blue-500 transition"></select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase mb-1 ml-1 block">Jurusan</label>
+                        <select name="jurusan" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none focus:border-blue-500 transition"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase mb-1 ml-1 block">HP Siswa</label>
+                        <input type="tel" name="telpSiswa" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-slate-400 uppercase mb-1 ml-1 block">HP Ortu (WA)</label>
+                        <input type="tel" name="telpOrtu" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" data-action="close-modal" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-sm text-slate-300 transition">Batal</button>
+                    <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium text-white shadow-lg transition">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-black/80 z-[120] hidden modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <div class="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">⚠️</span>
+            </div>
+            <h2 id="resetModalTitle" class="text-lg font-semibold text-center mb-2 text-white">RESET DATABASE</h2>
+            <p class="text-center text-xs text-slate-400 mb-6">Semua data akan dihapus permanen.</p>
+            <div class="grid gap-3">
+                <button data-action="delete-all" class="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl flex flex-col items-center transition">
+                    <span class="uppercase text-sm">Ya, Hapus Semua</span>
+                    <span class="text-[8px] opacity-70">DATA HILANG PERMANEN</span>
+                </button>
+                <button data-action="close-modal" class="py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Modal -->
+    <div id="maintenanceModal" class="fixed inset-0 bg-black/80 z-[120] hidden modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="maintenanceModalTitle">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-6 modal-content shadow-2xl mx-4">
+            <div class="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">🔧</span>
+            </div>
+            <h2 id="maintenanceModalTitle" class="text-lg font-semibold text-center text-orange-400 mb-2">FITUR MAINTENANCE</h2>
+            <p class="text-center text-sm text-slate-300 mb-4">WhatsApp sedang dalam perbaikan.</p>
+            <div class="bg-orange-950/30 border border-orange-800/50 rounded-xl p-3 mb-4 text-xs text-slate-300">
+                <span class="block font-medium text-orange-300 mb-1">📋 Mohon Pengertiannya</span>
+                Kami sedang melakukan perbaikan untuk pengalaman lebih baik.
+            </div>
+            <button data-action="close-modal" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-medium transition">Mengerti</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-28 md:bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-2xl font-medium shadow-2xl transition-all duration-300 opacity-0 translate-y-10 pointer-events-none z-[200] flex items-center gap-3 border border-white/10 text-sm">
+        <span id="toastIcon">✅</span>
+        <span id="toastMsg"></span>
+    </div>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-lg border-t border-slate-800 px-6 py-2 flex justify-around items-center z-50">
+        <button data-action="scroll-top" class="p-2 flex flex-col items-center text-slate-400 hover:text-blue-500 transition" aria-label="Scroll to top">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-1.125 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+            <span class="text-[9px] mt-0.5">Beranda</span>
+        </button>
+        <button data-action="open-reset" class="p-2 flex flex-col items-center text-slate-400 hover:text-red-500 transition" aria-label="Reset data">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <span class="text-[9px] mt-0.5">Reset</span>
+        </button>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden fixed inset-0 z-[150] bg-slate-950/95 backdrop-blur-sm overflow-y-auto">
+        <div class="min-h-screen p-5 md:p-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+                            <span class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-xl shadow-lg">⚙️</span>
+                            ADMIN MODE
+                        </h1>
+                        <p class="text-slate-400 text-xs mt-1">Kelola konfigurasi kelas & jurusan</p>
+                    </div>
+                    <button data-action="close-admin" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 transition" aria-label="Close admin panel">
+                        ← Kembali
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <div class="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-semibold flex items-center gap-2 text-slate-200">📚 Kelas</h2>
+                            <button data-action="add-kelas" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition">+ Tambah</button>
+                        </div>
+                        <div id="kelasTable" class="space-y-2"></div>
+                    </div>
+                    <div class="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-semibold flex items-center gap-2 text-slate-200">🎓 Jurusan</h2>
+                            <button data-action="add-jurusan" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition">+ Tambah</button>
+                        </div>
+                        <div id="jurusanTable" class="space-y-2"></div>
+                    </div>
+                </div>
+                <div class="mt-5 bg-indigo-950/30 border border-indigo-800/30 rounded-2xl p-4 text-sm text-indigo-200">
+                    <span class="font-medium text-indigo-300">💡 Real‑time sync:</span> Perubahan langsung tersimpan dan diterapkan ke seluruh sistem.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // ============================================================
+        // FULL DARK THEME, NO FALLBACK CSS
+        // ============================================================
+
+        const CONST = {
+            STORAGE_KEY: 'RAZIA_APP_V6',
+            CONFIG_KEY: 'app_config',
+            WARNING_THRESHOLD: 3,
+            MIN_NAME_LENGTH: 3,
+            MAX_NAME_LENGTH: 100,
+            MIN_REASON_LENGTH: 5,
+            CHUNK_SIZE: 20,
+            DEBOUNCE_DELAY: 300,
+            TOAST_DURATION: 3000,
+            DEFAULT_CONFIG: {
+                KELAS_OPTIONS: [
+                    { value: 'X', label: 'X' },
+                    { value: 'XI', label: 'XI' },
+                    { value: 'XII', label: 'XII' }
+                ],
+                JURUSAN_OPTIONS: [
+                    { value: 'TJKT 1', label: 'TJKT 1' },
+                    { value: 'TJKT 2', label: 'TJKT 2' },
+                    { value: 'TK 1', label: 'TK 1' },
+                    { value: 'TK 2', label: 'TK 2' },
+                    { value: 'MPLB', label: 'MPLB' },
+                    { value: 'AKL', label: 'AKL' },
+                    { value: 'Pemasaran', label: 'Pemasaran' },
+                    { value: 'ULP', label: 'ULP' }
+                ]
+            }
+        };
+
+        const Utils = {
+            generateId: () => `ID-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            formatDate: (isoString) => {
+                try {
+                    return new Date(isoString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                } catch { return 'Invalid Date'; }
+            },
+            debounce: (func, wait) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func(...args), wait);
+                };
+            },
+            throttle: (func, limit) => {
+                let inThrottle;
+                return (...args) => {
+                    if (!inThrottle) {
+                        func(...args);
+                        inThrottle = true;
+                        setTimeout(() => inThrottle = false, limit);
+                    }
+                };
+            },
+            sanitize: (str) => {
+                if (typeof str !== 'string') return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            },
+            validatePhoneNumber: (phone) => {
+                if (!phone) return true;
+                const digits = phone.replace(/\D/g, '');
+                if (digits.length === 0) return false;
+                if (digits.length < 10 || digits.length > 15) return false;
+                return true;
+            },
+            normalizePhone: (phone) => {
+                if (!phone) return '';
+                return phone.replace(/\D/g, '');
+            },
+            safeQuerySelector: (sel, parent = document) => parent.querySelector(sel)
+        };
+
+        class ConfigManager {
+            static load() {
+                try {
+                    const stored = localStorage.getItem(CONST.CONFIG_KEY);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed.KELAS_OPTIONS) && Array.isArray(parsed.JURUSAN_OPTIONS))
+                            return parsed;
+                    }
+                } catch {}
+                return CONST.DEFAULT_CONFIG;
+            }
+            static save(config) {
+                try {
+                    localStorage.setItem(CONST.CONFIG_KEY, JSON.stringify(config));
+                    return true;
+                } catch { return false; }
+            }
+            static addItem(type, value, label) {
+                const config = this.load();
+                const key = type === 'kelas' ? 'KELAS_OPTIONS' : 'JURUSAN_OPTIONS';
+                if (config[key].some(item => item.value === value)) return { success: false, error: 'Item sudah ada' };
+                config[key].push({ value, label });
+                this.save(config);
+                return { success: true };
+            }
+            static removeItem(type, value) {
+                const config = this.load();
+                const key = type === 'kelas' ? 'KELAS_OPTIONS' : 'JURUSAN_OPTIONS';
+                config[key] = config[key].filter(item => item.value !== value);
+                this.save(config);
+                return { success: true };
+            }
+            static editItem(type, oldValue, newValue, newLabel) {
+                const config = this.load();
+                const key = type === 'kelas' ? 'KELAS_OPTIONS' : 'JURUSAN_OPTIONS';
+                const index = config[key].findIndex(item => item.value === oldValue);
+                if (index !== -1) {
+                    config[key][index] = { value: newValue, label: newLabel };
+                    this.save(config);
+                    return { success: true };
+                }
+                return { success: false, error: 'Item tidak ditemukan' };
+            }
+            static get kelasOptions() { return this.load().KELAS_OPTIONS; }
+            static get jurusanOptions() { return [...this.load().JURUSAN_OPTIONS].sort((a,b) => a.label.localeCompare(b.label)); }
+        }
+
+        class StorageService {
+            static save(data) {
+                if (!Array.isArray(data)) throw new Error('Data must be array');
+                localStorage.setItem(CONST.STORAGE_KEY, JSON.stringify(data));
+            }
+            static load() {
+                try {
+                    const raw = localStorage.getItem(CONST.STORAGE_KEY);
+                    return raw ? JSON.parse(raw) : [];
+                } catch { return []; }
+            }
+            static clear() {
+                localStorage.removeItem(CONST.STORAGE_KEY);
+            }
+        }
+
+        class Validator {
+            static validateStudent(data) {
+                const errors = {};
+                const name = data.nama?.trim();
+                if (!name || name.length < CONST.MIN_NAME_LENGTH) errors.nama = `Nama minimal ${CONST.MIN_NAME_LENGTH} karakter`;
+                else if (name.length > CONST.MAX_NAME_LENGTH) errors.nama = `Nama maksimal ${CONST.MAX_NAME_LENGTH} karakter`;
+                if (!data.kelas) errors.kelas = "Kelas wajib diisi";
+                if (!data.jurusan) errors.jurusan = "Jurusan wajib diisi";
+                if (!data.alasan || data.alasan.trim().length < CONST.MIN_REASON_LENGTH) errors.alasan = `Kronologi minimal ${CONST.MIN_REASON_LENGTH} karakter`;
+                if (data.telpSiswa && !Utils.validatePhoneNumber(data.telpSiswa)) errors.telpSiswa = "Nomor HP tidak valid (min 10 digit, maks 15)";
+                if (data.telpOrtu && !Utils.validatePhoneNumber(data.telpOrtu)) errors.telpOrtu = "Nomor HP tidak valid (min 10 digit, maks 15)";
+                return { valid: Object.keys(errors).length === 0, errors };
+            }
+            static validateSchema(obj) {
+                return obj && typeof obj === 'object' && typeof obj.id === 'string' && typeof obj.nama === 'string' && Array.isArray(obj.history);
+            }
+        }
+
+        class StudentModel {
+            constructor(data) {
+                this.id = data.id || Utils.generateId();
+                this.nama = data.nama;
+                this.kelas = data.kelas || 'X';
+                this.jurusan = data.jurusan || '';
+                this.telpSiswa = Utils.normalizePhone(data.telpSiswa || '');
+                this.telpOrtu = Utils.normalizePhone(data.telpOrtu || '');
+                this.statusSitaan = data.statusSitaan || 'TIADA';
+                this.history = data.history || [];
+            }
+            addViolation(reason, mode) {
+                this.history.unshift({ timestamp: new Date().toISOString(), reason, mode });
+                if (mode === 'SITA') this.statusSitaan = 'BELUM';
+            }
+            toggleStatus() {
+                const states = ['BELUM', 'SELESAI', 'TIADA'];
+                let idx = states.indexOf(this.statusSitaan);
+                if (idx === -1) idx = 0;
+                this.statusSitaan = states[(idx + 1) % states.length];
+            }
+        }
+
+        class Toast {
+            static show(msg, icon = '✅', type = 'info') {
+                const el = document.getElementById('toast');
+                const msgEl = document.getElementById('toastMsg');
+                const iconEl = document.getElementById('toastIcon');
+                if (!el || !msgEl || !iconEl) return;
+                msgEl.innerText = msg;
+                iconEl.innerText = icon;
+                const typeClass = type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white';
+                el.className = `fixed bottom-28 md:bottom-8 left-1/2 -translate-x-1/2 px-6 py-4 rounded-2xl font-bold shadow-2xl transition-all duration-500 z-[200] flex items-center gap-3 border border-white/10 text-sm ${typeClass}`;
+                requestAnimationFrame(() => el.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none'));
+                if (this._timeout) clearTimeout(this._timeout);
+                this._timeout = setTimeout(() => el.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none'), CONST.TOAST_DURATION);
+            }
+        }
+
+        class ModalManager {
+            static open(modalId) {
+                const el = document.getElementById(modalId);
+                if (!el) return;
+                el.classList.remove('hidden');
+                requestAnimationFrame(() => el.classList.add('modal-active'));
+                const focusable = el.querySelector('button, [href], input, select, textarea');
+                if (focusable) focusable.focus();
+            }
+            static close(modalId) {
+                const el = document.getElementById(modalId);
+                if (!el) return;
+                el.classList.remove('modal-active');
+                setTimeout(() => el.classList.add('hidden'), 300);
+            }
+            static closeAll() {
+                document.querySelectorAll('.modal-active').forEach(el => this.close(el.id));
+            }
+        }
+
+        class CustomSelectManager {
+            static instances = new Map();
+
+            static init(selectEl) {
+                if (!selectEl) return;
+                if (this.instances.has(selectEl)) {
+                    this.destroy(selectEl);
+                }
+                selectEl.style.display = 'none';
+                const wrapper = this._createWrapper(selectEl);
+                selectEl.parentNode.insertBefore(wrapper, selectEl);
+                this.instances.set(selectEl, wrapper);
+                return wrapper;
+            }
+
+            static destroy(selectEl) {
+                const wrapper = this.instances.get(selectEl);
+                if (wrapper && wrapper.parentNode) {
+                    wrapper.parentNode.removeChild(wrapper);
+                }
+                selectEl.style.display = '';
+                this.instances.delete(selectEl);
+            }
+
+            static rebuildAll(selectors = 'select:not([data-custom-disabled])') {
+                const selects = document.querySelectorAll(selectors);
+                selects.forEach(select => {
+                    this.init(select);
+                });
+            }
+
+            static _createWrapper(selectEl) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-select-wrapper w-full';
+                const trigger = document.createElement('div');
+                const selectedText = selectEl.options[selectEl.selectedIndex]?.text || 'Pilih';
+                trigger.className = 'custom-select-trigger w-full';
+                trigger.innerHTML = `<span>${selectedText}</span><span class="arrow transition-transform duration-300 text-xs">▼</span>`;
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    wrapper.classList.toggle('open');
+                    const arrow = trigger.querySelector('.arrow');
+                    if (arrow) arrow.classList.toggle('rotate-180');
+                });
+                const container = document.createElement('div');
+                container.className = 'custom-select-options';
+                this._populateOptions(selectEl, container);
+                wrapper.appendChild(trigger);
+                wrapper.appendChild(container);
+
+                const closeHandler = (e) => {
+                    if (!wrapper.contains(e.target)) {
+                        wrapper.classList.remove('open');
+                        const arrow = trigger.querySelector('.arrow');
+                        if (arrow) arrow.classList.remove('rotate-180');
+                    }
+                };
+                document.addEventListener('click', closeHandler);
+                wrapper._closeHandler = closeHandler;
+
+                return wrapper;
+            }
+
+            static _populateOptions(selectEl, container) {
+                container.innerHTML = '';
+                Array.from(selectEl.options).forEach(opt => {
+                    if (opt.disabled && !opt.value) return;
+                    const div = document.createElement('div');
+                    div.className = `custom-option ${opt.selected ? 'selected' : ''}`;
+                    div.textContent = opt.text;
+                    div.dataset.value = opt.value;
+                    div.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectEl.value = opt.value;
+                        selectEl.dispatchEvent(new Event('change'));
+                        const wrapper = container.parentElement;
+                        const trigger = wrapper.querySelector('.custom-select-trigger');
+                        if (trigger) trigger.querySelector('span').textContent = opt.text;
+                        wrapper.classList.remove('open');
+                        const arrow = trigger.querySelector('.arrow');
+                        if (arrow) arrow.classList.remove('rotate-180');
+                        container.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+                        div.classList.add('selected');
+                    });
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        class DOMInjector {
+            static injectOptions(selectEl, options, placeholder = null) {
+                if (!selectEl) return;
+                selectEl.innerHTML = '';
+                if (placeholder) {
+                    const p = document.createElement('option');
+                    p.value = '';
+                    p.disabled = true;
+                    p.selected = true;
+                    p.textContent = placeholder;
+                    selectEl.appendChild(p);
+                }
+                options.forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = opt.value;
+                    o.textContent = opt.label;
+                    selectEl.appendChild(o);
+                });
+                CustomSelectManager.init(selectEl);
+            }
+        }
+
+        class NotificationService {
+            static updateBadgeAndList(students) {
+                const badge = document.getElementById('notif-badge');
+                const list = document.getElementById('notif-list');
+                const countSpan = document.getElementById('notif-count-text');
+                const warningStudents = students.filter(s => s.history.length >= CONST.WARNING_THRESHOLD);
+                const count = warningStudents.length;
+                if (count > 0) {
+                    badge.innerText = count > 9 ? '9+' : count;
+                    badge.classList.remove('hidden');
+                    countSpan.innerText = `${count} Siswa`;
+                    list.innerHTML = `
+                        <div class="px-4 py-2 bg-red-500/10 text-red-400 text-[9px] font-bold text-center uppercase tracking-widest border-b border-red-500/10">
+                            Wajib Panggilan Orang Tua
+                        </div>
+                    ` + warningStudents.map(s => `
+                        <div class="notif-item flex items-center gap-3 p-3 border-b border-slate-800 hover:bg-slate-800/50 cursor-pointer transition" data-student-id="${s.id}">
+                            <div class="w-10 h-10 bg-red-900/30 rounded-xl flex items-center justify-center text-lg flex-shrink-0">⚠️</div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-[11px] font-black text-white truncate">${Utils.sanitize(s.nama)}</h4>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${s.kelas} - ${s.jurusan} • ${s.history.length}x</p>
+                            </div>
+                            <button data-action="notif-wa" data-id="${s.id}" class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors text-xs flex-shrink-0" aria-label="Kirim WhatsApp">💬</button>
+                        </div>
+                    `).join('');
+                } else {
+                    badge.classList.add('hidden');
+                    countSpan.innerText = '0 Siswa';
+                    list.innerHTML = `<div class="p-8 text-center opacity-40"><span class="text-3xl block mb-2">🎈</span><p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Semua Aman</p></div>`;
+                }
+            }
+        }
+
+        class DOMRenderer {
+            constructor(containerId, statsContainerId, sentinelId) {
+                this.container = document.getElementById(containerId);
+                this.statsContainer = document.getElementById(statsContainerId);
+                this.sentinel = document.getElementById(sentinelId);
+            }
+
+            renderStats(students) {
+                const total = students.length;
+                const sita = students.filter(s => s.statusSitaan === 'BELUM').length;
+                const clear = students.filter(s => s.statusSitaan === 'SELESAI').length;
+                this.statsContainer.innerHTML = `
+                    <div class="stat-card bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-sm text-center hover:shadow-md transition-shadow">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Total Siswa</p>
+                        <h4 class="text-xl font-black italic text-white">${total}</h4>
+                    </div>
+                    <div class="stat-card bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-sm text-center hover:shadow-md transition-shadow">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Disita</p>
+                        <h4 class="text-xl font-black text-red-400 italic">${sita}</h4>
+                    </div>
+                    <div class="stat-card bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-sm text-center hover:shadow-md transition-shadow">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Selesai</p>
+                        <h4 class="text-xl font-black text-emerald-400 italic">${clear}</h4>
+                    </div>
+                `;
+            }
+
+            createCard(student) {
+                try {
+                    const hasWarning = student.history.length >= CONST.WARNING_THRESHOLD;
+                    const maintenance = true;
+                    const borderClass = student.statusSitaan === 'BELUM' ? 'border-red-500/50' : 'border-slate-700';
+                    
+                    let badgeHtml = '';
+                    if (student.statusSitaan === 'BELUM') {
+                        badgeHtml = '<span class="badge bg-red-500 text-white shadow-lg shadow-red-500/30 text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider">Disita</span>';
+                    } else if (student.statusSitaan === 'SELESAI') {
+                        badgeHtml = '<span class="badge bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider">Selesai</span>';
+                    } else {
+                        badgeHtml = '<span class="badge bg-slate-700 text-slate-300 text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider">Aman</span>';
+                    }
+
+                    const violationCount = student.history.length;
+                    const progressWidth = Math.min((violationCount / 5) * 100, 100);
+                    
+                    let historyHtml = '';
+                    if (student.history.length === 0) {
+                        historyHtml = '<p class="text-center text-[10px] text-slate-500 italic py-2">Belum ada riwayat</p>';
+                    } else {
+                        historyHtml = student.history.map(h => `
+                            <div class="relative pl-4 border-l-2 border-slate-700">
+                                <div class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ${h.mode === 'SITA' ? 'bg-red-500' : 'bg-slate-500'}"></div>
+                                <p class="text-[8px] font-bold text-slate-400 uppercase mb-0.5">${Utils.formatDate(h.timestamp)} • ${h.mode}</p>
+                                <p class="text-xs italic text-slate-300 leading-relaxed line-clamp-2 hover:line-clamp-none cursor-default">"${Utils.sanitize(h.reason)}"</p>
+                            </div>
+                        `).join('');
+                    }
+
+                    let waButtonClass = '';
+                    let waOverlay = '';
+                    let waIcon = '💬';
+                    if (maintenance) {
+                        waButtonClass = 'bg-orange-600 cursor-not-allowed opacity-80';
+                        waOverlay = '<div class="wa-overlay absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-[2px] flex items-center justify-center"><span class="text-[8px] font-black text-white bg-orange-600 px-2 py-1 rounded-lg shadow-lg">MAINTENANCE</span></div>';
+                        waIcon = '🔧';
+                    } else {
+                        waButtonClass = 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20';
+                        if (!hasWarning) {
+                            waButtonClass = 'bg-slate-600 cursor-not-allowed opacity-70';
+                        }
+                    }
+
+                    const cardHtml = `
+                        <div class="student-card bg-slate-800 border-2 ${borderClass} rounded-[2.5rem] p-6 md:p-8 transition-all hover:shadow-xl group relative overflow-hidden" data-student-id="${student.id}">
+                            <div class="flex justify-between items-start mb-6 relative z-10">
+                                <div data-edit-trigger class="cursor-pointer flex-1">
+                                    <h3 class="text-xl font-black text-white group-hover:text-blue-400 transition-colors">${Utils.sanitize(student.nama)}</h3>
+                                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Kelas ${Utils.sanitize(student.kelas)} - ${Utils.sanitize(student.jurusan)} • ${student.telpSiswa || 'No Phone'}</p>
+                                </div>
+                                <button data-delete class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-900/20 transition-all" aria-label="Hapus Data">
+                                    <span class="text-sm">🗑️</span>
+                                </button>
+                            </div>
+                            <div class="history-box bg-slate-900/50 p-5 rounded-3xl mb-6 border border-slate-700/50">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-1">
+                                        <span>History</span>
+                                        <span class="history-count bg-slate-700 text-slate-300 px-1.5 rounded text-[8px]">${student.history.length}</span>
+                                    </span>
+                                    ${badgeHtml}
+                                </div>
+                                <div class="progress-bar mb-3">
+                                    <div class="progress-fill" style="width: ${progressWidth}%;"></div>
+                                </div>
+                                <div class="history-list space-y-4 max-h-32 overflow-y-auto pr-2">
+                                    ${historyHtml}
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 relative z-10">
+                                <button data-quick-add class="py-3 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex flex-col items-center justify-center" aria-label="Tambah Pelanggaran">
+                                    <span class="text-lg mb-0.5">⚡</span>TAMBAH
+                                </button>
+                                <button data-toggle-status class="py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 text-[9px] font-black rounded-xl uppercase transition-all active:scale-95 flex flex-col items-center justify-center" aria-label="Ubah Status Sitaan">
+                                    <span class="text-lg mb-0.5">🔄</span>STATUS
+                                </button>
+                                <button data-wa class="wa-button py-3 ${waButtonClass} text-white text-[9px] font-black rounded-xl uppercase shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center relative overflow-hidden" aria-label="WhatsApp Orang Tua">
+                                    <span class="text-lg mb-0.5 wa-icon">${waIcon}</span>
+                                    WHATSAPP
+                                    ${waOverlay}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    const div = document.createElement('div');
+                    div.innerHTML = cardHtml.trim();
+                    return div.firstChild;
+                } catch (err) {
+                    console.error('Error creating card:', err);
+                    return null;
+                }
+            }
+
+            appendCards(cards) {
+                const fragment = document.createDocumentFragment();
+                cards.forEach(c => { if (c) fragment.appendChild(c); });
+                this.container.appendChild(fragment);
+            }
+
+            clearList() {
+                this.container.innerHTML = '';
+            }
+
+            setSentinelVisible(visible) {
+                if (this.sentinel) {
+                    if (visible) this.sentinel.classList.remove('hidden');
+                    else this.sentinel.classList.add('hidden');
+                }
+            }
+
+            renderAdminPanel(kelasOptions, jurusanOptions) {
+                const kelasTable = document.getElementById('kelasTable');
+                const jurusanTable = document.getElementById('jurusanTable');
+                if (kelasTable) {
+                    kelasTable.innerHTML = kelasOptions.map(item => `
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">${item.label}</span>
+                                <span class="font-bold text-sm text-white">Kelas ${item.label}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button data-action="edit-kelas" data-value="${item.value}" data-label="${item.label}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition" aria-label="Edit kelas">✏️ Edit</button>
+                                <button data-action="delete-kelas" data-value="${item.value}" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition" aria-label="Hapus kelas">🗑️ Hapus</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                if (jurusanTable) {
+                    jurusanTable.innerHTML = jurusanOptions.map(item => `
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <span class="w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold text-xs">${item.label.substring(0,2)}</span>
+                                <span class="font-bold text-sm text-white">${item.label}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button data-action="edit-jurusan" data-value="${item.value}" data-label="${item.label}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition" aria-label="Edit jurusan">✏️ Edit</button>
+                                <button data-action="delete-jurusan" data-value="${item.value}" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition" aria-label="Hapus jurusan">🗑️ Hapus</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        class AppController {
+            constructor() {
+                this.students = [];
+                this.searchTerm = '';
+                this.filterKelas = 'all';
+                this.filterJurusan = 'all';
+                this.displayedCount = 0;
+                this.chunkSize = CONST.CHUNK_SIZE;
+                this.whatsappMaintenance = true;
+                this.pendingViolation = null;
+                this.dom = new DOMRenderer('studentContainer', 'stats-container', 'sentinel');
+                this.initDOMRefs();
+            }
+
+            initDOMRefs() {
+                this.mainForm = document.getElementById('mainForm');
+                this.editForm = document.getElementById('editForm');
+                this.searchInput = document.getElementById('searchBar');
+                this.clearSearchBtn = document.getElementById('clearSearch');
+                this.filterKelasWrapper = document.getElementById('filter-kelas-wrapper');
+                this.filterJurusanWrapper = document.getElementById('filter-jurusan-wrapper');
+                this.loadingIndicator = document.getElementById('loading-indicator');
+            }
+
+            async init() {
+                try {
+                    this.loadConfigAndInject();
+                    this.loadData();
+                    this.attachEventDelegation();
+                    this.attachFormListeners();
+                    this.attachFilterListeners();
+                    this.setupInfiniteScroll();
+                    this.refreshUI(true);
+                } catch (err) {
+                    console.error('Init error:', err);
+                    const errorDiv = document.getElementById('global-error');
+                    const msgSpan = document.getElementById('error-message');
+                    if (errorDiv && msgSpan) {
+                        msgSpan.textContent = err.message || "Terjadi kesalahan sistem.";
+                        errorDiv.classList.remove('hidden');
+                        errorDiv.classList.add('flex');
+                    }
+                }
+            }
+
+            loadConfigAndInject() {
+                const mainKelas = Utils.safeQuerySelector('select[name="kelas"]');
+                const mainJurusan = Utils.safeQuerySelector('select[name="jurusan"]');
+                const editKelas = Utils.safeQuerySelector('#editForm select[name="kelas"]');
+                const editJurusan = Utils.safeQuerySelector('#editForm select[name="jurusan"]');
+                DOMInjector.injectOptions(mainKelas, ConfigManager.kelasOptions, 'Pilih Kelas...');
+                DOMInjector.injectOptions(mainJurusan, ConfigManager.jurusanOptions, 'Pilih Jurusan...');
+                DOMInjector.injectOptions(editKelas, ConfigManager.kelasOptions);
+                DOMInjector.injectOptions(editJurusan, ConfigManager.jurusanOptions);
+                
+                // Create filter selects as hidden native selects and wrap them
+                const kelasFilterSelect = document.createElement('select');
+                kelasFilterSelect.id = 'mobile-filter-kelas';
+                kelasFilterSelect.className = 'hidden';
+                const jurusanFilterSelect = document.createElement('select');
+                jurusanFilterSelect.id = 'mobile-filter-jurusan';
+                jurusanFilterSelect.className = 'hidden';
+                
+                // Populate options
+                const allKelasOption = document.createElement('option');
+                allKelasOption.value = 'all';
+                allKelasOption.textContent = '📚 Semua Kelas';
+                kelasFilterSelect.appendChild(allKelasOption);
+                ConfigManager.kelasOptions.forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = opt.value;
+                    o.textContent = `Kelas ${opt.label}`;
+                    kelasFilterSelect.appendChild(o);
+                });
+                
+                const allJurusanOption = document.createElement('option');
+                allJurusanOption.value = 'all';
+                allJurusanOption.textContent = '🎓 Semua Jurusan';
+                jurusanFilterSelect.appendChild(allJurusanOption);
+                ConfigManager.jurusanOptions.forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = opt.value;
+                    o.textContent = opt.label;
+                    jurusanFilterSelect.appendChild(o);
+                });
+                
+                this.filterKelasWrapper.innerHTML = '';
+                this.filterKelasWrapper.appendChild(kelasFilterSelect);
+                this.filterJurusanWrapper.innerHTML = '';
+                this.filterJurusanWrapper.appendChild(jurusanFilterSelect);
+                
+                // Initialize custom select for these
+                CustomSelectManager.init(kelasFilterSelect);
+                CustomSelectManager.init(jurusanFilterSelect);
+                
+                // Store references
+                this.mobileFilterKelas = kelasFilterSelect;
+                this.mobileFilterJurusan = jurusanFilterSelect;
+                
+                this.dom.renderAdminPanel(ConfigManager.kelasOptions, ConfigManager.jurusanOptions);
+            }
+
+            loadData() {
+                const raw = StorageService.load();
+                this.students = raw.filter(Validator.validateSchema).map(d => new StudentModel(d));
+            }
+
+            saveData() {
+                StorageService.save(this.students);
+                this.refreshUI(true);
+            }
+
+            getFilteredStudents() {
+                return this.students.filter(s => {
+                    const matchSearch = s.nama.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                        s.jurusan.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                        s.kelas.toLowerCase().includes(this.searchTerm.toLowerCase());
+                    const matchKelas = this.filterKelas === 'all' || s.kelas === this.filterKelas;
+                    const matchJurusan = this.filterJurusan === 'all' || s.jurusan === this.filterJurusan;
+                    return matchSearch && matchKelas && matchJurusan;
+                });
+            }
+
+            refreshUI(reset = false) {
+                if (reset) {
+                    this.dom.clearList();
+                    this.displayedCount = 0;
+                }
+                const filtered = this.getFilteredStudents();
+                this.dom.renderStats(this.students);
+                NotificationService.updateBadgeAndList(this.students);
+                const nextBatch = filtered.slice(this.displayedCount, this.displayedCount + this.chunkSize);
+                if (nextBatch.length > 0) {
+                    const cards = nextBatch.map(s => this.dom.createCard(s)).filter(c => c !== null);
+                    if (cards.length > 0) {
+                        this.dom.appendCards(cards);
+                        this.displayedCount += cards.length;
+                        this.dom.setSentinelVisible(this.displayedCount < filtered.length);
+                    } else {
+                        this.dom.container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-12 opacity-50">
+                            <span class="text-6xl block mb-4">⚠️</span>
+                            <p class="text-slate-500 font-bold text-lg">Gagal memuat data, coba muat ulang</p>
+                        </div>`;
+                        this.dom.setSentinelVisible(false);
+                    }
+                } else if (reset) {
+                    this.dom.container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-12 opacity-50">
+                        <span class="text-6xl block mb-4">😶‍🌫️</span>
+                        <p class="text-slate-500 font-bold text-lg">Data tidak ditemukan</p>
+                    </div>`;
+                    this.dom.setSentinelVisible(false);
+                }
+                if (this.clearSearchBtn) {
+                    if (this.searchTerm.length > 0) {
+                        this.clearSearchBtn.classList.remove('opacity-0', 'pointer-events-none');
+                    } else {
+                        this.clearSearchBtn.classList.add('opacity-0', 'pointer-events-none');
+                    }
+                }
+            }
+
+            loadMore() {
+                if (this.loadingIndicator) this.loadingIndicator.classList.remove('hidden');
+                setTimeout(() => {
+                    this.refreshUI(false);
+                    if (this.loadingIndicator) this.loadingIndicator.classList.add('hidden');
+                }, 50);
+            }
+
+            setupInfiniteScroll() {
+                const throttledLoad = Utils.throttle(() => {
+                    if (this.dom.sentinel && this.dom.sentinel.getBoundingClientRect().top < window.innerHeight + 100) {
+                        this.loadMore();
+                    }
+                }, 200);
+                if (window.IntersectionObserver) {
+                    const observer = new IntersectionObserver(entries => {
+                        if (entries[0].isIntersecting) this.loadMore();
+                    }, { rootMargin: '100px' });
+                    if (this.dom.sentinel) observer.observe(this.dom.sentinel);
+                } else {
+                    window.addEventListener('scroll', throttledLoad);
+                    throttledLoad();
+                }
+            }
+
+            attachEventDelegation() {
+                document.addEventListener('click', (e) => {
+                    const target = e.target.closest('[data-action]');
+                    if (target) {
+                        const action = target.dataset.action;
+                        this.handleGlobalAction(action, target, e);
+                        return;
+                    }
+                    const delBtn = e.target.closest('[data-delete]');
+                    if (delBtn) {
+                        const card = delBtn.closest('.student-card');
+                        if (card) this.deleteStudent(card.dataset.studentId);
+                        return;
+                    }
+                    const quickBtn = e.target.closest('[data-quick-add]');
+                    if (quickBtn) {
+                        const card = quickBtn.closest('.student-card');
+                        if (card) this.quickAdd(card.dataset.studentId);
+                        return;
+                    }
+                    const toggleBtn = e.target.closest('[data-toggle-status]');
+                    if (toggleBtn) {
+                        const card = toggleBtn.closest('.student-card');
+                        if (card) this.toggleStatus(card.dataset.studentId);
+                        return;
+                    }
+                    const waBtn = e.target.closest('[data-wa]');
+                    if (waBtn) {
+                        const card = waBtn.closest('.student-card');
+                        if (card) this.reqWa(card.dataset.studentId);
+                        return;
+                    }
+                    const editTrigger = e.target.closest('[data-edit-trigger]');
+                    if (editTrigger) {
+                        const card = editTrigger.closest('.student-card');
+                        if (card) this.openEdit(card.dataset.studentId);
+                        return;
+                    }
+                    const notifWa = e.target.closest('[data-action="notif-wa"]');
+                    if (notifWa && notifWa.dataset.id) {
+                        this.reqWa(notifWa.dataset.id);
+                        e.stopPropagation();
+                        return;
+                    }
+                    const notifItem = e.target.closest('.notif-item');
+                    if (notifItem && notifItem.dataset.studentId) {
+                        this.focusStudent(notifItem.dataset.studentId);
+                        return;
+                    }
+                });
+            }
+
+            handleGlobalAction(action, target, event) {
+                switch (action) {
+                    case 'toggle-admin':
+                        document.getElementById('adminPanel')?.classList.remove('hidden');
+                        this.dom.renderAdminPanel(ConfigManager.kelasOptions, ConfigManager.jurusanOptions);
+                        break;
+                    case 'close-admin':
+                        document.getElementById('adminPanel')?.classList.add('hidden');
+                        break;
+                    case 'toggle-notifications':
+                        document.getElementById('notif-panel')?.classList.toggle('active');
+                        break;
+                    case 'open-reset':
+                        ModalManager.open('resetModal');
+                        break;
+                    case 'close-modal':
+                        ModalManager.closeAll();
+                        break;
+                    case 'delete-all':
+                        this.deleteAllData();
+                        break;
+                    case 'confirm-sita':
+                        this.finalizeViolation('SITA');
+                        break;
+                    case 'confirm-catat':
+                        this.finalizeViolation('CATAT');
+                        break;
+                    case 'add-kelas': {
+                        const val = prompt('Masukkan kode kelas (contoh: XIII):');
+                        if (val) {
+                            const res = ConfigManager.addItem('kelas', val, val);
+                            if (res.success) { Toast.show(`Kelas ${val} ditambahkan`, '✅'); this.reloadConfigAndRefresh(); }
+                            else Toast.show(res.error, '⚠️', 'error');
+                        }
+                        break;
+                    }
+                    case 'add-jurusan': {
+                        const val = prompt('Masukkan nama jurusan:');
+                        if (val) {
+                            const res = ConfigManager.addItem('jurusan', val, val);
+                            if (res.success) { Toast.show(`Jurusan ${val} ditambahkan`, '✅'); this.reloadConfigAndRefresh(); }
+                            else Toast.show(res.error, '⚠️', 'error');
+                        }
+                        break;
+                    }
+                    case 'edit-kelas': {
+                        const oldVal = target.dataset.value;
+                        if (!oldVal) break;
+                        const newVal = prompt('Edit kode kelas:', oldVal);
+                        if (newVal && newVal !== oldVal) {
+                            const res = ConfigManager.editItem('kelas', oldVal, newVal, newVal);
+                            if (res.success) { Toast.show('Kelas diupdate', '✅'); this.reloadConfigAndRefresh(); }
+                            else Toast.show(res.error, '⚠️', 'error');
+                        }
+                        break;
+                    }
+                    case 'edit-jurusan': {
+                        const oldVal = target.dataset.value;
+                        if (!oldVal) break;
+                        const newVal = prompt('Edit nama jurusan:', oldVal);
+                        if (newVal && newVal !== oldVal) {
+                            const res = ConfigManager.editItem('jurusan', oldVal, newVal, newVal);
+                            if (res.success) { Toast.show('Jurusan diupdate', '✅'); this.reloadConfigAndRefresh(); }
+                            else Toast.show(res.error, '⚠️', 'error');
+                        }
+                        break;
+                    }
+                    case 'delete-kelas': {
+                        const val = target.dataset.value;
+                        if (val && confirm(`Hapus Kelas ${val}?`)) {
+                            ConfigManager.removeItem('kelas', val);
+                            Toast.show(`Kelas ${val} dihapus`, '🗑️');
+                            this.reloadConfigAndRefresh();
+                        }
+                        break;
+                    }
+                    case 'delete-jurusan': {
+                        const val = target.dataset.value;
+                        if (val && confirm(`Hapus Jurusan ${val}?`)) {
+                            ConfigManager.removeItem('jurusan', val);
+                            Toast.show(`Jurusan ${val} dihapus`, '🗑️');
+                            this.reloadConfigAndRefresh();
+                        }
+                        break;
+                    }
+                    case 'scroll-top':
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        break;
+                }
+            }
+
+            reloadConfigAndRefresh() {
+                this.loadConfigAndInject();
+                this.refreshUI(true);
+            }
+
+            attachFormListeners() {
+                this.mainForm?.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(this.mainForm);
+                    const data = Object.fromEntries(formData.entries());
+                    const { valid, errors } = Validator.validateStudent(data);
+                    this.clearFormErrors();
+                    if (!valid) {
+                        this.showFormErrors(errors);
+                        Toast.show("Periksa kembali inputan Anda", "⚠️", "error");
+                        return;
+                    }
+                    this.pendingViolation = { ...data, isNew: true };
+                    ModalManager.open('actionModal');
+                });
+                this.editForm?.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const fd = new FormData(this.editForm);
+                    const data = Object.fromEntries(fd.entries());
+                    const student = this.students.find(s => s.id === data.id);
+                    if (student) {
+                        student.nama = data.nama;
+                        student.kelas = data.kelas;
+                        student.jurusan = data.jurusan;
+                        student.telpSiswa = Utils.normalizePhone(data.telpSiswa);
+                        student.telpOrtu = Utils.normalizePhone(data.telpOrtu);
+                        this.saveData();
+                        ModalManager.closeAll();
+                        Toast.show("Data diperbarui!");
+                    }
+                });
+            }
+
+            attachFilterListeners() {
+                if (this.searchInput) {
+                    const debounced = Utils.debounce(() => {
+                        this.searchTerm = this.searchInput.value;
+                        this.refreshUI(true);
+                    }, CONST.DEBOUNCE_DELAY);
+                    this.searchInput.addEventListener('input', debounced);
+                }
+                if (this.clearSearchBtn) {
+                    this.clearSearchBtn.addEventListener('click', () => {
+                        this.searchInput.value = '';
+                        this.searchTerm = '';
+                        this.refreshUI(true);
+                        this.searchInput.focus();
+                    });
+                }
+                if (this.mobileFilterKelas) {
+                    this.mobileFilterKelas.addEventListener('change', (e) => {
+                        this.filterKelas = e.target.value;
+                        this.refreshUI(true);
+                    });
+                }
+                if (this.mobileFilterJurusan) {
+                    this.mobileFilterJurusan.addEventListener('change', (e) => {
+                        this.filterJurusan = e.target.value;
+                        this.refreshUI(true);
+                    });
+                }
+            }
+
+            clearFormErrors() {
+                document.querySelectorAll('[data-error]').forEach(el => el.classList.add('hidden'));
+            }
+
+            showFormErrors(errors) {
+                for (const [key, msg] of Object.entries(errors)) {
+                    const p = document.querySelector(`[data-error="${key}"]`);
+                    if (p) {
+                        p.textContent = msg;
+                        p.classList.remove('hidden');
+                    }
+                }
+            }
+
+            finalizeViolation(mode) {
+                if (this.pendingViolation?.isNew) {
+                    const existing = this.students.find(s => s.nama.toLowerCase() === this.pendingViolation.nama.toLowerCase() && s.kelas.toLowerCase() === this.pendingViolation.kelas.toLowerCase());
+                    if (existing) {
+                        existing.addViolation(this.pendingViolation.alasan, mode);
+                        this.students.sort((a,b) => b.history[0]?.timestamp.localeCompare(a.history[0]?.timestamp) || 0);
+                        Toast.show("Data siswa diperbarui!", "✅");
+                    } else {
+                        const student = new StudentModel(this.pendingViolation);
+                        student.addViolation(this.pendingViolation.alasan, mode);
+                        this.students.unshift(student);
+                        Toast.show("Siswa Baru Ditambahkan!", "🎉");
+                    }
+                } else if (this.pendingViolation?.isQuick) {
+                    const student = this.students.find(s => s.id === this.pendingViolation.studentId);
+                    if (student) {
+                        student.addViolation(this.pendingViolation.alasan, mode);
+                        this.students.sort((a,b) => b.history[0]?.timestamp.localeCompare(a.history[0]?.timestamp) || 0);
+                        Toast.show("Pelanggaran ditambahkan!");
+                    }
+                }
+                this.saveData();
+                ModalManager.closeAll();
+                this.mainForm?.reset();
+                this.pendingViolation = null;
+            }
+
+            deleteStudent(id) {
+                if (confirm("Hapus data ini secara permanen?")) {
+                    this.students = this.students.filter(s => s.id !== id);
+                    this.saveData();
+                    Toast.show("Data dihapus", "🗑️");
+                }
+            }
+
+            quickAdd(id) {
+                const reason = prompt("Masukkan detail pelanggaran:");
+                if (reason) {
+                    this.pendingViolation = { studentId: id, alasan: reason, isQuick: true };
+                    ModalManager.open('actionModal');
+                }
+            }
+
+            toggleStatus(id) {
+                const s = this.students.find(x => x.id === id);
+                if (s) {
+                    s.toggleStatus();
+                    this.saveData();
+                    Toast.show(`Status: ${s.statusSitaan}`);
+                }
+            }
+
+            openEdit(id) {
+                const s = this.students.find(x => x.id === id);
+                if (s) {
+                    const form = this.editForm;
+                    form.id.value = s.id;
+                    form.nama.value = s.nama;
+                    form.kelas.value = s.kelas;
+                    form.jurusan.value = s.jurusan;
+                    form.telpSiswa.value = s.telpSiswa;
+                    form.telpOrtu.value = s.telpOrtu;
+                    ModalManager.open('editModal');
+                }
+            }
+
+            reqWa(id) {
+                if (this.whatsappMaintenance) {
+                    ModalManager.open('maintenanceModal');
+                    return;
+                }
+                const s = this.students.find(x => x.id === id);
+                if (!s || !s.telpOrtu) {
+                    Toast.show("Nomor WA Ortu tidak tersedia", "⚠️", "error");
+                    return;
+                }
+                let phone = s.telpOrtu;
+                if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                else if (!phone.startsWith('62')) phone = '62' + phone;
+                const text = `Halo, saya dari SMKN 1 Malteng. Menginfokan bahwa siswa atas nama *${s.nama}* (Kelas: *${s.kelas} - ${s.jurusan}*) telah melakukan pelanggaran ke-${s.history.length}.\n\nKronologi terakhir: ${s.history[0]?.reason || '-'}`;
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+            }
+
+            focusStudent(id) {
+                const s = this.students.find(x => x.id === id);
+                if (!s) return;
+                this.filterKelas = 'all';
+                this.filterJurusan = 'all';
+                this.searchTerm = s.nama;
+                if (this.searchInput) this.searchInput.value = s.nama;
+                if (this.mobileFilterKelas) this.mobileFilterKelas.value = 'all';
+                if (this.mobileFilterJurusan) this.mobileFilterJurusan.value = 'all';
+                this.refreshUI(true);
+                document.getElementById('notif-panel')?.classList.remove('active');
+                window.scrollTo({ top: this.dom.container.offsetTop - 100, behavior: 'smooth' });
+                Toast.show(`Menampilkan: ${s.nama}`, "🔍");
+            }
+
+            deleteAllData() {
+                const confirmMsg = prompt("⚠️ PERINGATAN KERAS ⚠️\n\nSemua data akan dihapus permanen.\n\nKetik 'HAPUS' untuk melanjutkan:");
+                if (confirmMsg === 'HAPUS') {
+                    this.students = [];
+                    StorageService.clear();
+                    this.saveData();
+                    ModalManager.closeAll();
+                    Toast.show("Database berhasil di-reset.", "💥");
+                } else if (confirmMsg !== null) {
+                    Toast.show("Penghapusan dibatalkan.", "ℹ️");
+                }
+            }
+        }
+
+        const app = new AppController();
+        app.init().catch(err => {
+            console.error('Fatal error:', err);
+            const errorDiv = document.getElementById('global-error');
+            const msgSpan = document.getElementById('error-message');
+            if (errorDiv && msgSpan) {
+                msgSpan.textContent = err.message || "Terjadi kesalahan sistem.";
+                errorDiv.classList.remove('hidden');
+                errorDiv.classList.add('flex');
+            }
+        });
+    </script>
+</body>
+</html>
